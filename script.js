@@ -245,30 +245,74 @@
     });
   }
 
-  var REQUIRED_FIELDS = ["TYPE", "ROLES", "TRAIT_1", "TRAIT_2", "TRAIT_3"];
+  var FIELD_KEYS = ["TYPE", "ROLES", "TRAIT_1", "TRAIT_2", "TRAIT_3"];
+  var FIELD_MARKERS = ["TYPE:", "ROLES:", "TRAIT_1:", "TRAIT_2:", "TRAIT_3:"];
+  var OPEN_TAG = "[SHARE_RESULT]";
+  var CLOSE_TAG = "[/SHARE_RESULT]";
 
   // Extracts TYPE / ROLES / TRAIT_1-3 from a [SHARE_RESULT]...[/SHARE_RESULT]
-  // block inside the pasted ChatGPT answer. Never throws; always returns a
-  // plain result object so a malformed paste can't break the page.
+  // block inside the pasted ChatGPT answer.
+  //
+  // Real ChatGPT output doesn't reliably put one field per line — it may
+  // collapse the whole block onto a single line, use \r\n, or add extra
+  // spaces. So each field is located by its label text ("TYPE:", "ROLES:",
+  // ...) rather than by line boundaries: a field's value runs from right
+  // after its own label to the start of the next label that is actually
+  // present (falling back to the closing tag, or end of text if that's
+  // missing too). This never throws; it always returns a plain result
+  // object so a malformed paste can't break the page.
   function parseShareResult(fullText) {
-    var blockMatch = /\[SHARE_RESULT\]([\s\S]*?)\[\/SHARE_RESULT\]/.exec(
-      fullText || ""
-    );
-    if (!blockMatch) {
+    fullText = fullText || "";
+    var openIdx = fullText.indexOf(OPEN_TAG);
+    if (openIdx === -1) {
       return { ok: false, blockFound: false, missing: [] };
     }
-    var block = blockMatch[1];
+
+    var afterOpen = openIdx + OPEN_TAG.length;
+    var closeIdx = fullText.indexOf(CLOSE_TAG, afterOpen);
+    var blockEnd = closeIdx === -1 ? fullText.length : closeIdx;
+    var block = fullText.slice(afterOpen, blockEnd);
+
+    // Locate each label, searching forward from wherever the previous
+    // label was found so labels are matched in their expected order.
+    var located = [];
+    var searchFrom = 0;
+    FIELD_MARKERS.forEach(function (marker, i) {
+      var idx = block.indexOf(marker, searchFrom);
+      if (idx === -1) {
+        located.push({ key: FIELD_KEYS[i], found: false });
+      } else {
+        located.push({
+          key: FIELD_KEYS[i],
+          found: true,
+          markerStart: idx,
+          valueStart: idx + marker.length,
+        });
+        searchFrom = idx + marker.length;
+      }
+    });
+
     var fields = {};
     var missing = [];
-
-    REQUIRED_FIELDS.forEach(function (key) {
-      var pattern = new RegExp("^[ \\t]*" + key + ":[ \\t]*(.+)$", "m");
-      var m = pattern.exec(block);
-      var value = m && m[1] ? m[1].trim() : "";
+    located.forEach(function (entry, i) {
+      if (!entry.found) {
+        missing.push(entry.key);
+        return;
+      }
+      // Value ends where the next *found* label begins, or at the end
+      // of the block if this is the last one found.
+      var end = block.length;
+      for (var j = i + 1; j < located.length; j++) {
+        if (located[j].found) {
+          end = located[j].markerStart;
+          break;
+        }
+      }
+      var value = block.slice(entry.valueStart, end).trim();
       if (value) {
-        fields[key] = value;
+        fields[entry.key] = value;
       } else {
-        missing.push(key);
+        missing.push(entry.key);
       }
     });
 
