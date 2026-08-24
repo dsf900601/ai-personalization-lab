@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Personalization Lab — 내 ChatGPT는 어떤 AI가 됐을까?</title>
+<meta name="description" content="당신과 오래 대화한 ChatGPT는 어떤 유형의 AI로 개인화되어 있을까요? 진단 프롬프트를 복사해서 직접 확인해보세요. 무료, 로그인 없음, 대화 수집 없음.">
+<meta property="og:title" content="내 ChatGPT는 나랑 대화하면서 어떤 AI가 됐을까?">
+<meta property="og:description" content="당신의 성격 테스트가 아닙니다. 당신과 오래 대화한 ChatGPT의 행동 유형을 진단해보는 실험입니다.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <span class="brand">AI Personalization Lab</span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">무료 · 로그인 없음 · 대화 수집 없음</p>
+      <h1>내 ChatGPT는 나랑 대화하면서<br>어떤 AI가 됐을까?</h1>
+      <p class="hero-sub">
+        당신의 성격을 검사하는 테스트가 아닙니다.<br>
+        당신과 오래 대화한 ChatGPT가 어떤 방식으로<br class="mobile-only">
+        개인화되어 있는지 살펴봅니다.
+      </p>
+      <a href="#diagnose" class="btn btn-primary btn-large">내 ChatGPT 유형 알아보기</a>
+    </div>
+  </section>
+
+  <!-- CONCEPT -->
+  <section class="concept">
+    <div class="wrap">
+      <h2>이게 무슨 테스트인가요?</h2>
+      <p>
+        사람마다 ChatGPT를 사용하는 방식은 다릅니다.<br>
+        누군가는 검색 도구처럼 쓰고,<br>
+        누군가는 비서처럼 쓰고,<br>
+        누군가는 아이디어 파트너나 상담 상대처럼 씁니다.
+      </p>
+      <p>
+        장기간의 상호작용과 사용자 설정에 따라 ChatGPT가 실제로
+        어떤 행동적 특성을 보이는지 직접 확인해보자는 실험입니다.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>이 테스트는 과학적으로 검증된 심리검사가 아닙니다.</strong><br>
+          ChatGPT가 접근 가능한 대화 맥락, 저장된 정보, 사용자 설정 및
+          현재 나타나는 응답 행동을 바탕으로 스스로 분석하게 하는
+          탐색적 진단입니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how">
+    <div class="wrap">
+      <h2>사용 방법</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div>
+            <h3>진단 프롬프트를 복사하세요</h3>
+            <p>아래에 준비된 프롬프트를 그대로 복사합니다.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div>
+            <h3>평소 쓰던 ChatGPT에 붙여넣으세요</h3>
+            <p>가능하면 오래 사용해온 계정·환경에서 실행해야 정확도가 높아집니다.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div>
+            <h3>결과를 확인하고 비교해보세요</h3>
+            <p>내 ChatGPT의 유형을 확인하고, 다른 사람의 결과와 비교해보세요.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- DIAGNOSTIC PROMPT -->
+  <section class="diagnose" id="diagnose">
+    <div class="wrap">
+      <h2>진단 프롬프트</h2>
+      <p class="section-sub">이 텍스트 전체를 복사해서 ChatGPT에 붙여넣으세요.</p>
+
+      <div class="prompt-box">
+        <details class="prompt-details">
+          <summary>프롬프트 전체 보기 / 접기</summary>
+          <pre id="promptText" class="prompt-pre"></pre>
+        </details>
+      </div>
+
+      <button id="copyBtn" class="btn btn-primary btn-large btn-copy" type="button">
+        <span class="copy-icon" aria-hidden="true">⧉</span>
+        프롬프트 복사하기
+      </button>
+      <p id="copyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- EXAMPLE RESULTS -->
+  <section class="examples">
+    <div class="wrap">
+      <h2>이런 결과가 나올 수 있어요</h2>
+      <ul class="example-list">
+        <li>장기맥락형 공동사고 파트너</li>
+        <li>실행관리형 비서</li>
+        <li>탐구형 교사</li>
+        <li>창작협업형 파트너</li>
+        <li>정보검색 중심형</li>
+      </ul>
+      <p class="example-note">
+        유형은 미리 정해진 목록에서 선택되는 것이 아닙니다.<br>
+        ChatGPT가 현재 상호작용 패턴을 바탕으로 직접 이름을 붙입니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- SHARE / FEEDBACK -->
+  <section class="share" id="share">
+    <div class="wrap">
+      <h2>결과 공유하기</h2>
+      <p class="section-sub">
+        ChatGPT가 알려준 결과를 아래에 옮겨 적으면, 공유하기 좋은 형태로
+        정리해드려요. 입력한 내용은 어디에도 전송되거나 저장되지 않고,
+        이 브라우저 안에서만 사용됩니다.
+      </p>
+
+      <form id="shareForm" class="share-form">
+        <label for="typeName">최종 유형명</label>
+        <input type="text" id="typeName" placeholder="예: 장기맥락형 공동사고 파트너">
+
+        <label for="roleMix">역할 구성비</label>
+        <input type="text" id="roleMix" placeholder="예: 사고파트너 40% + 지식관리자 25% + ...">
+
+        <label for="traits">핵심 차별점 3가지 (줄바꿈으로 구분)</label>
+        <textarea id="traits" rows="3" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+
+        <label for="accuracy">결과가 실제 경험과 얼마나 맞았나요?</label>
+        <select id="accuracy">
+          <option value="">선택 안 함</option>
+          <option value="5">5 — 소름 돋게 정확했다</option>
+          <option value="4">4 — 꽤 맞았다</option>
+          <option value="3">3 — 반반이다</option>
+          <option value="2">2 — 별로 안 맞았다</option>
+          <option value="1">1 — 전혀 아니었다</option>
+        </select>
+
+        <label for="opinion">자유 의견 (선택)</label>
+        <textarea id="opinion" rows="3" placeholder="개인적인 대화 내용이나 민감한 정보는 적지 말아주세요."></textarea>
+
+        <div class="share-actions">
+          <button type="button" id="generateBtn" class="btn btn-secondary">공유 카드 만들기</button>
+        </div>
+      </form>
+
+      <div id="shareResult" class="share-result" hidden>
+        <pre id="shareOutput" class="share-output"></pre>
+        <div class="share-actions">
+          <button type="button" id="shareCopyBtn" class="btn btn-primary">텍스트 복사하기</button>
+          <button type="button" id="webShareBtn" class="btn btn-secondary" hidden>공유하기</button>
+        </div>
+        <p id="shareFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="feedback-placeholder">
+        <p>※ 더 많은 사람들의 피드백을 모아 분석할 수 있는 설문 기능은 준비 중입니다.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>AI Personalization Lab — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
+    <p>이 사이트는 OpenAI API를 호출하지 않으며, 여러분의 ChatGPT 대화 내용을 수집하지 않습니다.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
