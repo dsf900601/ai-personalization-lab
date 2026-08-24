@@ -233,17 +233,16 @@ section h2 {
   padding-top: 14px;
 }
 
-/* ---------- Share form ---------- */
+/* ---------- Share: paste & parse ---------- */
 .share { background: var(--paper); }
-.share-form { display: flex; flex-direction: column; gap: 6px; }
-.share-form label {
+.paste-block { display: flex; flex-direction: column; gap: 8px; }
+.paste-block label {
   font-size: 0.85rem;
   font-weight: 700;
-  margin-top: 12px;
 }
-.share-form input,
-.share-form select,
-.share-form textarea {
+.paste-block textarea,
+.optional-feedback select,
+.optional-feedback textarea {
   font-family: inherit;
   font-size: 0.95rem;
   padding: 10px 12px;
@@ -252,13 +251,41 @@ section h2 {
   background: var(--card-bg);
   color: var(--ink);
   resize: vertical;
+  width: 100%;
 }
-.share-form input:focus,
-.share-form select:focus,
-.share-form textarea:focus {
+.paste-block textarea {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.paste-block textarea:focus,
+.optional-feedback select:focus,
+.optional-feedback textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+.paste-meta {
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+}
+.privacy-note {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.paste-block .btn-large { margin-top: 6px; }
+.parse-status {
+  min-height: 1.4em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: pre-line;
+  margin: 0;
+}
+.parse-status-success { color: #2f6f3e; }
+.parse-status-error { color: #b3261e; }
+
 .share-actions {
   display: flex;
   gap: 10px;
@@ -280,6 +307,23 @@ section h2 {
   word-break: keep-all;
   overflow-wrap: break-word;
   margin: 0 0 14px;
+}
+.optional-feedback {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.optional-feedback-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0;
+}
+.optional-feedback-title span {
+  font-weight: 400;
+  color: var(--ink-soft);
 }
 .feedback-placeholder {
   margin-top: 24px;

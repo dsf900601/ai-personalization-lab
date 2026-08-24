@@ -131,7 +131,26 @@
 "\n" +
 "마지막에는 반드시 다음 문장을 완성해줘.\n" +
 "\n" +
-"«\"나와 오래 상호작용한 결과, 너는 ____________형 AI가 되었다.\"»";
+"«\"나와 오래 상호작용한 결과, 너는 ____________형 AI가 되었다.\"»\n" +
+"\n" +
+"마지막으로, 위 1~9번 항목을 모두 출력한 뒤 답변의 가장 마지막에 아래 형식을 반드시 그대로 추가로 출력해줘. 이 블록은 내용을 요약하거나 대체하는 것이 아니라, 웹페이지가 자동으로 결과를 읽기 위한 별도의 요약 데이터야.\n" +
+"\n" +
+"[SHARE_RESULT]\n" +
+"TYPE: 최종 유형명\n" +
+"ROLES: 역할1 00% | 역할2 00% | 역할3 00% | ...\n" +
+"TRAIT_1: 핵심 차별점 1\n" +
+"TRAIT_2: 핵심 차별점 2\n" +
+"TRAIT_3: 핵심 차별점 3\n" +
+"[/SHARE_RESULT]\n" +
+"\n" +
+"규칙:\n" +
+"\n" +
+"- 반드시 답변의 가장 마지막에 출력해줘.\n" +
+"- TYPE은 한 줄로 작성해줘.\n" +
+"- ROLES는 한 줄로 작성하고, 역할 구성비 합계가 정확히 100%가 되도록 해줘.\n" +
+"- TRAIT_1, TRAIT_2, TRAIT_3은 각각 한 줄로 작성해줘.\n" +
+"- 이 블록을 코드블록(```) 안에 넣지 마.\n" +
+"- 위 태그 이름과 형식은 임의로 바꾸지 마.";
 
   // ---------- Render prompt text ----------
   var promptTextEl = document.getElementById("promptText");
@@ -203,68 +222,146 @@
     });
   }
 
-  // ---------- Share card generator ----------
-  var generateBtn = document.getElementById("generateBtn");
+  // ---------- Result paste & auto-parse ----------
+  var resultInput = document.getElementById("resultInput");
+  var charCount = document.getElementById("charCount");
+  var parseBtn = document.getElementById("parseBtn");
+  var parseStatus = document.getElementById("parseStatus");
   var shareResult = document.getElementById("shareResult");
   var shareOutput = document.getElementById("shareOutput");
   var shareCopyBtn = document.getElementById("shareCopyBtn");
   var shareFeedback = document.getElementById("shareFeedback");
   var webShareBtn = document.getElementById("webShareBtn");
+  var accuracySelect = document.getElementById("accuracy");
+  var opinionInput = document.getElementById("opinion");
 
-  function buildShareText() {
-    var typeName = (document.getElementById("typeName").value || "").trim();
-    var roleMix = (document.getElementById("roleMix").value || "").trim();
-    var traits = (document.getElementById("traits").value || "").trim();
-    var accuracySelect = document.getElementById("accuracy");
-    var accuracyLabel =
-      accuracySelect.options[accuracySelect.selectedIndex].text;
-    var opinion = (document.getElementById("opinion").value || "").trim();
+  // Holds the last successfully parsed result, so optional feedback
+  // (accuracy / opinion) can update the share card without re-parsing.
+  var lastParsed = null;
+
+  if (resultInput && charCount) {
+    resultInput.addEventListener("input", function () {
+      charCount.textContent = resultInput.value.length + "자";
+    });
+  }
+
+  var REQUIRED_FIELDS = ["TYPE", "ROLES", "TRAIT_1", "TRAIT_2", "TRAIT_3"];
+
+  // Extracts TYPE / ROLES / TRAIT_1-3 from a [SHARE_RESULT]...[/SHARE_RESULT]
+  // block inside the pasted ChatGPT answer. Never throws; always returns a
+  // plain result object so a malformed paste can't break the page.
+  function parseShareResult(fullText) {
+    var blockMatch = /\[SHARE_RESULT\]([\s\S]*?)\[\/SHARE_RESULT\]/.exec(
+      fullText || ""
+    );
+    if (!blockMatch) {
+      return { ok: false, blockFound: false, missing: [] };
+    }
+    var block = blockMatch[1];
+    var fields = {};
+    var missing = [];
+
+    REQUIRED_FIELDS.forEach(function (key) {
+      var pattern = new RegExp("^[ \\t]*" + key + ":[ \\t]*(.+)$", "m");
+      var m = pattern.exec(block);
+      var value = m && m[1] ? m[1].trim() : "";
+      if (value) {
+        fields[key] = value;
+      } else {
+        missing.push(key);
+      }
+    });
+
+    if (missing.length > 0) {
+      return { ok: false, blockFound: true, missing: missing };
+    }
+    return { ok: true, fields: fields };
+  }
+
+  function showParseStatus(message, isError) {
+    parseStatus.textContent = message;
+    parseStatus.classList.toggle("parse-status-error", !!isError);
+    parseStatus.classList.toggle("parse-status-success", !isError);
+  }
+
+  function buildShareText(fields) {
+    var roles = fields.ROLES.split("|")
+      .map(function (r) { return r.trim(); })
+      .filter(Boolean);
 
     var lines = [];
     lines.push("🧪 내 ChatGPT 유형 진단 결과");
     lines.push("");
-    lines.push("유형: " + (typeName || "(입력 안 함)"));
-    if (roleMix) {
-      lines.push("역할 구성비: " + roleMix);
-    }
-    if (traits) {
-      lines.push("");
-      lines.push("핵심 차별점:");
-      traits.split("\n").forEach(function (line) {
-        var t = line.trim();
-        if (t) lines.push("- " + t);
-      });
-    }
-    if (accuracySelect.value) {
+    lines.push("유형: " + fields.TYPE);
+    lines.push("");
+    lines.push("역할 구성비");
+    roles.forEach(function (r) { lines.push(r); });
+    lines.push("");
+    lines.push("핵심 차별점");
+    lines.push("1. " + fields.TRAIT_1);
+    lines.push("2. " + fields.TRAIT_2);
+    lines.push("3. " + fields.TRAIT_3);
+
+    if (accuracySelect && accuracySelect.value) {
+      var accuracyLabel =
+        accuracySelect.options[accuracySelect.selectedIndex].text;
       lines.push("");
       lines.push("실제 경험과의 일치도: " + accuracyLabel);
     }
+    var opinion = opinionInput ? opinionInput.value.trim() : "";
     if (opinion) {
       lines.push("");
       lines.push("한줄평: " + opinion);
     }
+
     lines.push("");
     lines.push("#AI개인화랩 #내ChatGPT유형");
 
     return lines.join("\n");
   }
 
-  if (generateBtn) {
-    generateBtn.addEventListener("click", function () {
-      var typeName = document.getElementById("typeName").value.trim();
-      if (!typeName) {
-        document.getElementById("typeName").focus();
+  // Renders the share card from lastParsed. Uses textContent only (never
+  // innerHTML) so pasted ChatGPT text can never be interpreted as markup.
+  function renderShareCard() {
+    if (!lastParsed) return;
+    shareOutput.textContent = buildShareText(lastParsed);
+    shareResult.hidden = false;
+    if (navigator.share) {
+      webShareBtn.hidden = false;
+    }
+  }
+
+  if (parseBtn) {
+    parseBtn.addEventListener("click", function () {
+      var raw = resultInput.value;
+      var result = parseShareResult(raw);
+
+      if (!result.ok) {
+        lastParsed = null;
+        shareResult.hidden = true;
+        var msg = "결과 형식을 찾지 못했어요.\n최신 진단 프롬프트로 다시 실행한 뒤 ChatGPT의 답변 전체를 붙여넣어 주세요.";
+        if (result.blockFound && result.missing.length > 0) {
+          var quoted = result.missing.map(function (f) { return "\"" + f + "\""; });
+          msg += "\n" + quoted.join(", ") + " 항목을 찾지 못했습니다.";
+        }
+        showParseStatus(msg, true);
         return;
       }
-      var text = buildShareText();
-      shareOutput.textContent = text;
-      shareResult.hidden = false;
-      shareResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
-      if (navigator.share) {
-        webShareBtn.hidden = false;
-      }
+      lastParsed = result.fields;
+      showParseStatus("결과를 찾았습니다 ✓", false);
+      renderShareCard();
+      shareResult.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  }
+
+  // Optional feedback (accuracy / opinion) only re-renders an already
+  // generated card — it never gates card creation.
+  if (accuracySelect) {
+    accuracySelect.addEventListener("change", renderShareCard);
+  }
+  if (opinionInput) {
+    opinionInput.addEventListener("input", renderShareCard);
   }
 
   if (shareCopyBtn) {

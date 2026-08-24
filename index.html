@@ -136,38 +136,23 @@
     <div class="wrap">
       <h2>결과 공유하기</h2>
       <p class="section-sub">
-        ChatGPT가 알려준 결과를 아래에 옮겨 적으면, 공유하기 좋은 형태로
-        정리해드려요. 입력한 내용은 어디에도 전송되거나 저장되지 않고,
-        이 브라우저 안에서만 사용됩니다.
+        ChatGPT가 작성한 진단 답변 전체를 복사해서 아래에 붙여넣으세요.<br>
+        필요한 결과만 브라우저에서 자동으로 찾아 공유 카드로 만들어드립니다.
       </p>
 
-      <form id="shareForm" class="share-form">
-        <label for="typeName">최종 유형명</label>
-        <input type="text" id="typeName" placeholder="예: 장기맥락형 공동사고 파트너">
-
-        <label for="roleMix">역할 구성비</label>
-        <input type="text" id="roleMix" placeholder="예: 사고파트너 40% + 지식관리자 25% + ...">
-
-        <label for="traits">핵심 차별점 3가지 (줄바꿈으로 구분)</label>
-        <textarea id="traits" rows="3" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
-
-        <label for="accuracy">결과가 실제 경험과 얼마나 맞았나요?</label>
-        <select id="accuracy">
-          <option value="">선택 안 함</option>
-          <option value="5">5 — 소름 돋게 정확했다</option>
-          <option value="4">4 — 꽤 맞았다</option>
-          <option value="3">3 — 반반이다</option>
-          <option value="2">2 — 별로 안 맞았다</option>
-          <option value="1">1 — 전혀 아니었다</option>
-        </select>
-
-        <label for="opinion">자유 의견 (선택)</label>
-        <textarea id="opinion" rows="3" placeholder="개인적인 대화 내용이나 민감한 정보는 적지 말아주세요."></textarea>
-
-        <div class="share-actions">
-          <button type="button" id="generateBtn" class="btn btn-secondary">공유 카드 만들기</button>
+      <div class="paste-block">
+        <label for="resultInput">ChatGPT 결과 붙여넣기</label>
+        <textarea id="resultInput" rows="10" placeholder="ChatGPT의 답변 전체를 여기에 붙여넣어 주세요."></textarea>
+        <div class="paste-meta">
+          <span id="charCount">0자</span>
         </div>
-      </form>
+        <p class="privacy-note">
+          붙여넣은 내용은 서버로 전송되거나 저장되지 않습니다.<br>
+          이 브라우저 안에서 공유 카드 생성에 필요한 부분만 읽습니다.
+        </p>
+        <button type="button" id="parseBtn" class="btn btn-primary btn-large">내 결과 카드 만들기</button>
+        <p id="parseStatus" class="parse-status" role="status" aria-live="polite"></p>
+      </div>
 
       <div id="shareResult" class="share-result" hidden>
         <pre id="shareOutput" class="share-output"></pre>
@@ -176,6 +161,21 @@
           <button type="button" id="webShareBtn" class="btn btn-secondary" hidden>공유하기</button>
         </div>
         <p id="shareFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+
+        <div class="optional-feedback">
+          <p class="optional-feedback-title">이 결과, 실제 경험과 얼마나 맞았나요? <span>(선택)</span></p>
+          <select id="accuracy">
+            <option value="">선택 안 함</option>
+            <option value="5">5 — 소름 돋게 정확했다</option>
+            <option value="4">4 — 꽤 맞았다</option>
+            <option value="3">3 — 반반이다</option>
+            <option value="2">2 — 별로 안 맞았다</option>
+            <option value="1">1 — 전혀 아니었다</option>
+          </select>
+
+          <label for="opinion" class="optional-feedback-title">자유 의견 <span>(선택)</span></label>
+          <textarea id="opinion" rows="3" placeholder="개인적인 대화 내용이나 민감한 정보는 적지 말아주세요."></textarea>
+        </div>
       </div>
 
       <div class="feedback-placeholder">
