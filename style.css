@@ -26,22 +26,33 @@ a { color: inherit; }
 button { font-family: inherit; }
 
 :root {
-  /* Design tokens */
-  --bg-deep: #080B0E;
-  --bg-surface: #101820;
-  --bg-surface-2: #141d26;
+  /* Design tokens
+     Base: Deep Ink (main bg) / Blue Black (secondary bg, cards) /
+     Warm Ivory (bright accent section, CTA fill) / Soft Ivory (headings,
+     primary text — a warm mid-tone, not pure white).
+     Visual weight is roughly Deep Ink 65% / Blue Black 15% /
+     ivory family 12% / nacre accents 8% — nacre stays confined to small
+     elements (glyphs, borders, dividers, step numbers, the crest),
+     never large fills. */
+  --bg-deep: #070C10;        /* Deep Ink */
+  --bg-surface: #101A22;     /* Blue Black */
+  --bg-surface-2: #14202A;   /* Blue Black, one step lighter (cards) */
 
-  --text-primary: #F2EFE8;
-  --text-muted: #9DA4A8;
+  --ivory-warm: #F1EBDD;     /* Warm Ivory — bright section fill / CTA */
+  --ivory-soft: #D8D0C1;     /* Soft Ivory — headings / primary text */
+  --ink-on-ivory: #171B1D;   /* text color used on Warm Ivory surfaces */
 
-  --pearl-silver: #D8DEE2;
-  --nacre-cyan: #72D5D0;
-  --nacre-blue: #779BD8;
-  --nacre-violet: #AE8BC9;
-  --nacre-rose: #D89BAF;
+  --text-primary: var(--ivory-soft);
+  --text-muted: #9C968B;     /* warm gray, not cool gray */
 
-  --line: rgba(216, 222, 226, 0.14);
-  --line-soft: rgba(216, 222, 226, 0.08);
+  --pearl-silver: #D9D6CD;   /* warm-tinted neutral for glyph/icon strokes */
+  --nacre-cyan: #67C6C8;     /* Pearl Cyan */
+  --nacre-blue: #76A8D8;     /* Shell Blue */
+  --nacre-violet: #9B8ACB;   /* Pearl Violet */
+  --nacre-rose: #C78FAF;     /* Shell Pink */
+
+  --line: rgba(216, 208, 193, 0.14);
+  --line-soft: rgba(216, 208, 193, 0.08);
   --card-bg: var(--bg-surface);
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -141,7 +152,7 @@ button { font-family: inherit; }
   display: inline-block;
   font-size: 0.78rem;
   color: var(--text-muted);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(103, 198, 200, 0.32);
   border-radius: 999px;
   padding: 4px 12px;
   margin-bottom: 20px;
@@ -180,9 +191,9 @@ button { font-family: inherit; }
 }
 .btn:active { background: rgba(114, 213, 208, 0.1); }
 .btn-primary {
-  background: var(--text-primary);
-  color: var(--bg-deep);
-  border-color: var(--text-primary);
+  background: var(--ivory-warm);
+  color: var(--ink-on-ivory);
+  border-color: var(--ivory-warm);
 }
 .btn-primary:hover, .btn-primary:focus-visible {
   background: var(--pearl-silver);
@@ -226,7 +237,7 @@ section h2 {
 .callout {
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
-  border-left: 2px solid var(--nacre-blue);
+  border-left: 2px solid var(--nacre-violet);
   border-radius: 8px;
   padding: 16px 18px;
   margin-top: 20px;
@@ -253,6 +264,11 @@ section h2 {
   font-weight: 700;
   font-size: 0.92rem;
 }
+/* Step numbers drift through the nacre accents in sequence — a small,
+   deliberate echo of "색이 조금씩 변화" rather than one flat neutral. */
+.steps .step:nth-child(1) .step-num { border-color: var(--nacre-cyan); color: var(--nacre-cyan); }
+.steps .step:nth-child(2) .step-num { border-color: var(--nacre-blue); color: var(--nacre-blue); }
+.steps .step:nth-child(3) .step-num { border-color: var(--nacre-rose); color: var(--nacre-rose); }
 .step h3 { font-size: 1.02rem; margin-bottom: 4px; color: var(--text-primary); }
 .step p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
 
@@ -308,7 +324,16 @@ section h2 {
   margin-top: 10px;
 }
 
-/* ---------- Examples ---------- */
+/* ---------- Examples: the page's one bright rest stop ---------- */
+/* A single Warm Ivory section breaks up an otherwise all-dark scroll —
+   text flips to --ink-on-ivory here, everything else in the section
+   inherits it rather than repeating the dark palette a third time in a
+   row. Structure/copy unchanged, only the surface flips bright. */
+.examples {
+  background: var(--ivory-warm);
+  color: var(--ink-on-ivory);
+}
+.examples h2 { color: var(--ink-on-ivory); }
 .example-list {
   list-style: none;
   display: flex;
@@ -317,18 +342,19 @@ section h2 {
   margin-bottom: 18px;
 }
 .example-list li {
-  background: var(--bg-surface-2);
-  border: 1px solid var(--line);
+  background: rgba(23, 27, 29, 0.05);
+  border: 1px solid rgba(23, 27, 29, 0.14);
+  border-bottom: 2px solid rgba(103, 198, 200, 0.45);
   border-radius: 999px;
   padding: 8px 16px;
   font-size: 0.84rem;
   font-family: var(--mono);
-  color: var(--text-muted);
+  color: var(--ink-on-ivory);
 }
 .example-note {
-  color: var(--text-muted);
+  color: rgba(23, 27, 29, 0.68);
   font-size: 0.88rem;
-  border-top: 1px dashed var(--line);
+  border-top: 1px dashed rgba(23, 27, 29, 0.18);
   padding-top: 14px;
 }
 
