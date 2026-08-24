@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Personalization Lab — 내 ChatGPT는 어떤 AI가 됐을까?</title>
+<title>MY AI TYPE — 내 ChatGPT는 어떤 AI가 됐을까?</title>
 <meta name="description" content="당신과 오래 대화한 ChatGPT는 어떤 유형의 AI로 개인화되어 있을까요? 진단 프롬프트를 복사해서 직접 확인해보세요. 무료, 로그인 없음, 대화 수집 없음.">
 <meta property="og:title" content="내 ChatGPT는 나랑 대화하면서 어떤 AI가 됐을까?">
 <meta property="og:description" content="당신의 성격 테스트가 아닙니다. 당신과 오래 대화한 ChatGPT의 행동 유형을 진단해보는 실험입니다.">
@@ -15,9 +15,70 @@
 
 <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
+<!-- Shared abstract glyph library. Each glyph shares the same stroke
+     weight / geometry language; role glyphs are referenced via <use>
+     both in the on-page result card and the exported PNG. -->
+<svg class="glyph-defs" aria-hidden="true">
+  <defs>
+    <!-- Thought: two nodes joined by a curved connector -->
+    <symbol id="glyph-thought" viewBox="0 0 24 24">
+      <path class="glyph" d="M8.5,15.8 Q12,9.5 15.8,8.3"/>
+      <circle class="glyph" cx="7.2" cy="17" r="2.1"/>
+      <circle class="glyph" cx="16.8" cy="7" r="2.1"/>
+    </symbol>
+    <!-- Context / knowledge: layered thin strata -->
+    <symbol id="glyph-context" viewBox="0 0 24 24">
+      <rect class="glyph" x="5" y="5.5" width="13" height="3.4" rx="1.7"/>
+      <rect class="glyph" x="6.5" y="10.3" width="13" height="3.4" rx="1.7"/>
+      <rect class="glyph" x="5" y="15.1" width="13" height="3.4" rx="1.7"/>
+    </symbol>
+    <!-- Execution: a directed flow reaching a point -->
+    <symbol id="glyph-execution" viewBox="0 0 24 24">
+      <path class="glyph" d="M4,18 C9,18 9,10 20,6"/>
+      <path class="glyph" d="M15.5,6 L20,6 L20,10.5"/>
+    </symbol>
+    <!-- Creation: one trace branching into several -->
+    <symbol id="glyph-creation" viewBox="0 0 24 24">
+      <path class="glyph" d="M12,20 L12,12.5"/>
+      <path class="glyph" d="M12,12.5 L6,5"/>
+      <path class="glyph" d="M12,12.5 L12,4"/>
+      <path class="glyph" d="M12,12.5 L18,5"/>
+    </symbol>
+    <!-- Search: a wave with a located point -->
+    <symbol id="glyph-search" viewBox="0 0 24 24">
+      <path class="glyph" d="M3,15 Q7.5,8.5 12,15 T21,15"/>
+      <circle class="glyph-dot" cx="14.4" cy="12.2" r="1.5"/>
+    </symbol>
+    <!-- Conversation / emotional: two curves facing each other -->
+    <symbol id="glyph-conversation" viewBox="0 0 24 24">
+      <path class="glyph" d="M9,4.5 C4.5,8 4.5,16 9,19.5"/>
+      <path class="glyph" d="M15,4.5 C19.5,8 19.5,16 15,19.5"/>
+    </symbol>
+    <!-- Research / verification: two traces crossing at one point -->
+    <symbol id="glyph-research" viewBox="0 0 24 24">
+      <path class="glyph" d="M4,6 L12,12 L20,6"/>
+      <path class="glyph" d="M4,18 L12,12 L20,18"/>
+      <circle class="glyph-dot" cx="12" cy="12" r="1.3"/>
+    </symbol>
+    <!-- Fallback: a simple point within a ring -->
+    <symbol id="glyph-default" viewBox="0 0 24 24">
+      <circle class="glyph" cx="12" cy="12" r="6.5"/>
+      <circle class="glyph-dot" cx="12" cy="12" r="1.7"/>
+    </symbol>
+    <!-- Core: a lens-shaped mark used at the crest's center -->
+    <symbol id="glyph-core" viewBox="0 0 24 24">
+      <path class="glyph" d="M4.5,12 C7,7.6 9.4,6.5 12,6.5 C14.6,6.5 17,7.6 19.5,12 C17,16.4 14.6,17.5 12,17.5 C9.4,17.5 7,16.4 4.5,12 Z"/>
+      <circle class="glyph-dot" cx="12" cy="12" r="1.4"/>
+    </symbol>
+  </defs>
+</svg>
+
 <header class="site-header">
   <div class="wrap">
-    <span class="brand">AI Personalization Lab</span>
+    <span class="brand-block">
+      <span class="brand">MY AI TYPE</span>
+      <span class="brand-sub">AI Personalization Lab</span>
+    </span>
   </div>
 </header>
 
@@ -25,15 +86,28 @@
 
   <!-- HERO -->
   <section class="hero">
+    <svg class="hero-wave" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g class="wave-group">
+        <path class="wave-line wave-line--cyan" d="M-20,150 Q60,120 140,150 T300,150 T460,150"/>
+        <path class="wave-line wave-line--blue" d="M-20,170 Q80,145 160,170 T320,170 T480,170"/>
+      </g>
+      <g class="wave-group wave-group--slow">
+        <path class="wave-line wave-line--violet" d="M-20,190 Q100,165 200,190 T420,190"/>
+        <circle class="wave-chip" cx="70" cy="128" r="2" fill="var(--nacre-cyan)"/>
+        <circle class="wave-chip" cx="210" cy="158" r="1.6" fill="var(--nacre-rose)"/>
+        <circle class="wave-chip" cx="330" cy="140" r="2.2" fill="var(--nacre-violet)"/>
+      </g>
+    </svg>
     <div class="wrap">
+      <svg class="hero-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-core"/></svg>
       <p class="eyebrow">무료 · 로그인 없음 · 대화 수집 없음</p>
       <h1>내 ChatGPT는 나랑 대화하면서<br>어떤 AI가 됐을까?</h1>
       <p class="hero-sub">
-        당신의 성격을 검사하는 테스트가 아닙니다.<br>
-        당신과 오래 대화한 ChatGPT가 어떤 방식으로<br class="mobile-only">
-        개인화되어 있는지 살펴봅니다.
+        당신을 검사하는 테스트가 아닙니다.<br>
+        당신과 오래 대화한 AI에게 나타나는<br class="mobile-only">
+        행동 패턴을 살펴봅니다.
       </p>
-      <a href="#diagnose" class="btn btn-primary btn-large">내 ChatGPT 유형 알아보기</a>
+      <a href="#diagnose" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
     </div>
   </section>
 
@@ -155,10 +229,23 @@
       </div>
 
       <div id="shareResult" class="share-result" hidden>
-        <pre id="shareOutput" class="share-output"></pre>
-        <div class="share-actions">
-          <button type="button" id="shareCopyBtn" class="btn btn-primary">텍스트 복사하기</button>
-          <button type="button" id="webShareBtn" class="btn btn-secondary" hidden>공유하기</button>
+        <div class="result-card" id="resultCard">
+          <p class="result-card-brand">MY AI TYPE</p>
+          <svg id="resultCrest" class="result-card-crest" viewBox="0 0 160 160" aria-hidden="true"></svg>
+          <p class="result-card-type" id="resultType"></p>
+          <div class="result-card-roles" id="resultRoles"></div>
+          <hr class="result-card-divider">
+          <ol class="result-card-traits" id="resultTraits"></ol>
+          <p class="result-card-footer">myaitype.kr</p>
+        </div>
+
+        <!-- Plain-text version, kept for clipboard copy / text share -->
+        <pre id="shareOutput" class="share-output" hidden></pre>
+
+        <div class="image-actions">
+          <button type="button" id="saveImageBtn" class="btn btn-primary">이미지 저장</button>
+          <button type="button" id="shareCopyBtn" class="btn btn-secondary">텍스트 복사하기</button>
+          <button type="button" id="webShareBtn" class="btn btn-secondary" hidden>결과 공유</button>
         </div>
         <p id="shareFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
 
@@ -188,13 +275,13 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>AI Personalization Lab — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
+    <p>MY AI TYPE (AI Personalization Lab) — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
     <p>이 사이트는 OpenAI API를 호출하지 않으며, 여러분의 ChatGPT 대화 내용을 수집하지 않습니다.</p>
   </div>
 </footer>
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=3"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>

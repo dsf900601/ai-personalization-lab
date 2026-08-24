@@ -232,8 +232,13 @@
   var shareCopyBtn = document.getElementById("shareCopyBtn");
   var shareFeedback = document.getElementById("shareFeedback");
   var webShareBtn = document.getElementById("webShareBtn");
+  var saveImageBtn = document.getElementById("saveImageBtn");
   var accuracySelect = document.getElementById("accuracy");
   var opinionInput = document.getElementById("opinion");
+  var resultCrest = document.getElementById("resultCrest");
+  var resultType = document.getElementById("resultType");
+  var resultRoles = document.getElementById("resultRoles");
+  var resultTraits = document.getElementById("resultTraits");
 
   // Holds the last successfully parsed result, so optional feedback
   // (accuracy / opinion) can update the share card without re-parsing.
@@ -364,15 +369,450 @@
     return lines.join("\n");
   }
 
-  // Renders the share card from lastParsed. Uses textContent only (never
-  // innerHTML) so pasted ChatGPT text can never be interpreted as markup.
-  function renderShareCard() {
+  // Parses "역할1 00% | 역할2 00% | ..." into [{name, percent}]. percent is
+  // null when a segment doesn't end in a number followed by "%".
+  function parseRoles(rolesStr) {
+    return (rolesStr || "")
+      .split("|")
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean)
+      .map(function (entry) {
+        var m = /^(.*?)\s*(\d+(?:\.\d+)?)\s*%\s*$/.exec(entry);
+        return m
+          ? { name: m[1].trim(), percent: parseFloat(m[2]) }
+          : { name: entry, percent: null };
+      });
+  }
+
+  // ---------- Deterministic AI crest ----------
+  // Same TYPE + ROLES always produce the same crest: a small hash of the
+  // role composition seeds a PRNG that only nudges rotation/gradient
+  // angle, never which roles or how many appear.
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  // Mirrors the CSS custom properties in style.css. Duplicated here (as
+  // literal hex) because the exported PNG is rendered from a standalone
+  // SVG document that has no access to this page's stylesheet/:root.
+  var COLORS = {
+    bgDeep: "#080B0E",
+    textPrimary: "#F2EFE8",
+    textMuted: "#9DA4A8",
+    pearlSilver: "#D8DEE2",
+    nacreCyan: "#72D5D0",
+    nacreBlue: "#779BD8",
+    nacreViolet: "#AE8BC9",
+    nacreRose: "#D89BAF",
+  };
+
+  // Ordered keyword groups: first category whose keyword appears in the
+  // role name wins. Order matters where keywords could otherwise overlap
+  // (e.g. "실행" is checked before context's more generic terms).
+  var GLYPH_RULES = [
+    ["research", ["검증", "비판", "연구", "분석", "비교"]],
+    ["thought", ["사고", "추론", "가설"]],
+    ["execution", ["실행", "보조", "비서", "관리", "설계"]],
+    ["creation", ["창작", "협업", "제작", "기획"]],
+    ["search", ["검색", "정보"]],
+    ["conversation", ["정서", "공감", "대화", "상담", "감정"]],
+    ["context", ["지식", "맥락", "기억", "저장"]],
+  ];
+
+  function mapRoleToGlyph(name) {
+    name = name || "";
+    for (var i = 0; i < GLYPH_RULES.length; i++) {
+      var category = GLYPH_RULES[i][0];
+      var keywords = GLYPH_RULES[i][1];
+      for (var j = 0; j < keywords.length; j++) {
+        if (name.indexOf(keywords[j]) !== -1) return category;
+      }
+    }
+    return "default";
+  }
+
+  // 32-bit FNV-1a — small, dependency-free, stable across runs/browsers.
+  function hashString(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  // mulberry32 — deterministic PRNG from a 32-bit seed.
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function topRoles(roles, count) {
+    var withPct = roles.filter(function (r) { return r.percent != null && r.percent > 0; });
+    var basis = withPct.length ? withPct : roles;
+    return basis
+      .slice()
+      .sort(function (a, b) { return (b.percent || 0) - (a.percent || 0); })
+      .slice(0, count);
+  }
+
+  // Builds the crest's inner SVG markup (defs + ring + role arcs + glyphs
+  // + center mark) as a plain string. Contains no user-supplied text —
+  // only numbers and our own fixed glyph ids — so it's safe to assign via
+  // innerHTML on-page, and portable into the standalone export SVG too.
+  function buildCrestMarkup(fields, opts) {
+    opts = opts || {};
+    var size = opts.size || 160;
+    var idPrefix = opts.idPrefix || "c";
+    var cx = size / 2;
+    var cy = size / 2;
+    var r = size * 0.34;
+    var strokeW = size * 0.085;
+    var glyphSize = size * 0.15;
+
+    var roles = parseRoles(fields.ROLES);
+    var top = topRoles(roles, 3);
+    if (!top.length) top = [{ name: fields.TYPE, percent: 100 }];
+    var total = top.reduce(function (s, r) { return s + (r.percent || 100 / top.length); }, 0) || 1;
+
+    var seed = hashString(fields.TYPE + "::" + top.map(function (r) { return r.name + ":" + r.percent; }).join("|"));
+    var rand = mulberry32(seed);
+
+    var gapDeg = top.length > 1 ? 14 : 0;
+    var availableDeg = 360 - gapDeg * top.length;
+    var angleCursor = -90 + (rand() * 30 - 15);
+
+    var stops = [
+      ["0%", COLORS.nacreCyan],
+      ["35%", COLORS.nacreBlue],
+      ["65%", COLORS.nacreViolet],
+      ["100%", COLORS.nacreRose],
+    ];
+
+    var defsMarkup = "";
+    var arcsMarkup = "";
+    var glyphsMarkup = "";
+
+    top.forEach(function (role, i) {
+      var pct = role.percent || 100 / top.length;
+      var sweepDeg = availableDeg * (pct / total);
+      var lengthPct = (sweepDeg / 360 * 100).toFixed(2);
+      var gradId = idPrefix + "-grad-" + i;
+      var gradRotation = (rand() * 360).toFixed(1);
+
+      defsMarkup +=
+        '<linearGradient id="' + gradId + '" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="' + size + '" y2="' + size +
+        '" gradientTransform="rotate(' + gradRotation + " " + cx + " " + cy + ')">' +
+        stops.map(function (s) { return '<stop offset="' + s[0] + '" stop-color="' + s[1] + '"/>'; }).join("") +
+        "</linearGradient>";
+
+      var jitter = (rand() * 8 - 4).toFixed(2);
+      arcsMarkup +=
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="url(#' + gradId + ')" stroke-width="' + strokeW +
+        '" stroke-linecap="round" pathLength="100" stroke-dasharray="' + lengthPct + " " + (100 - lengthPct) +
+        '" stroke-dashoffset="' + (-(angleCursor / 360 * 100)).toFixed(2) + '" opacity="0.85" transform="rotate(' + jitter + " " + cx + " " + cy + ')"/>';
+
+      var midAngle = angleCursor + sweepDeg / 2;
+      var rad = (midAngle * Math.PI) / 180;
+      var gx = cx + r * Math.cos(rad);
+      var gy = cy + r * Math.sin(rad);
+      var glyphId = "glyph-" + mapRoleToGlyph(role.name);
+      glyphsMarkup +=
+        '<use href="#' + glyphId + '" x="' + (gx - glyphSize / 2).toFixed(2) + '" y="' + (gy - glyphSize / 2).toFixed(2) +
+        '" width="' + glyphSize + '" height="' + glyphSize + '" color="' + COLORS.pearlSilver + '"/>';
+
+      angleCursor += sweepDeg + gapDeg;
+    });
+
+    var coreSize = size * 0.22;
+    var coreMarkup =
+      '<use href="#glyph-core" x="' + (cx - coreSize / 2).toFixed(2) + '" y="' + (cy - coreSize / 2).toFixed(2) +
+      '" width="' + coreSize + '" height="' + coreSize + '" color="' + COLORS.pearlSilver + '"/>';
+    var ringMarkup =
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + strokeW / 2 + 3) + '" fill="none" stroke="rgba(216,222,226,0.22)" stroke-width="1"/>';
+
+    return "<defs>" + defsMarkup + "</defs>" + ringMarkup + arcsMarkup + glyphsMarkup + coreMarkup;
+  }
+
+  // ---------- On-page visual card ----------
+  function renderVisualCard(fields) {
+    resultCrest.innerHTML = buildCrestMarkup(fields, { size: 160, idPrefix: "onpage" });
+    resultType.textContent = fields.TYPE;
+
+    while (resultRoles.firstChild) resultRoles.removeChild(resultRoles.firstChild);
+    parseRoles(fields.ROLES).forEach(function (role) {
+      var wrap = document.createElement("div");
+      wrap.className = "result-role-row-wrap";
+
+      var row = document.createElement("div");
+      row.className = "result-role-row";
+
+      var glyphSvg = document.createElementNS(SVG_NS, "svg");
+      glyphSvg.setAttribute("class", "result-role-glyph");
+      glyphSvg.setAttribute("viewBox", "0 0 24 24");
+      var use = document.createElementNS(SVG_NS, "use");
+      use.setAttribute("href", "#glyph-" + mapRoleToGlyph(role.name));
+      glyphSvg.appendChild(use);
+
+      var nameSpan = document.createElement("span");
+      nameSpan.className = "result-role-name";
+      nameSpan.textContent = role.name;
+
+      var pctSpan = document.createElement("span");
+      pctSpan.className = "result-role-pct";
+      pctSpan.textContent = role.percent != null ? role.percent + "%" : "";
+
+      row.appendChild(glyphSvg);
+      row.appendChild(nameSpan);
+      row.appendChild(pctSpan);
+
+      var track = document.createElement("div");
+      track.className = "result-role-bar-track";
+      var fill = document.createElement("div");
+      fill.className = "result-role-bar-fill";
+      fill.style.width = (role.percent != null ? Math.min(100, role.percent) : 0) + "%";
+      track.appendChild(fill);
+
+      wrap.appendChild(row);
+      wrap.appendChild(track);
+      resultRoles.appendChild(wrap);
+    });
+
+    while (resultTraits.firstChild) resultTraits.removeChild(resultTraits.firstChild);
+    ["TRAIT_1", "TRAIT_2", "TRAIT_3"].forEach(function (key, i) {
+      var li = document.createElement("li");
+      li.className = "result-trait-row";
+      var num = document.createElement("span");
+      num.className = "result-trait-num";
+      num.textContent = "0" + (i + 1);
+      var text = document.createElement("span");
+      text.className = "result-trait-text";
+      text.textContent = fields[key];
+      li.appendChild(num);
+      li.appendChild(text);
+      resultTraits.appendChild(li);
+    });
+  }
+
+  // ---------- Downloadable PNG card (1080x1350, portrait) ----------
+  var CARD_WIDTH = 1080;
+  var CARD_HEIGHT = 1350;
+  var CARD_FONT = "-apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif";
+
+  function escapeXml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  function wrapText(ctx, text, maxWidth, font) {
+    ctx.font = font;
+    var words = String(text).split(/(\s+)/);
+    var lines = [];
+    var current = "";
+    words.forEach(function (word) {
+      var test = current + word;
+      if (current === "" || ctx.measureText(test).width <= maxWidth) {
+        current = test;
+      } else {
+        lines.push(current.trim());
+        current = word;
+      }
+    });
+    if (current.trim()) lines.push(current.trim());
+
+    // A single "word" (common in Korean, which has no spaces within a
+    // clause) can still overflow maxWidth on its own — break by character.
+    var finalLines = [];
+    lines.forEach(function (line) {
+      if (ctx.measureText(line).width <= maxWidth) {
+        finalLines.push(line);
+        return;
+      }
+      var buf = "";
+      for (var i = 0; i < line.length; i++) {
+        var t = buf + line[i];
+        if (buf === "" || ctx.measureText(t).width <= maxWidth) {
+          buf = t;
+        } else {
+          finalLines.push(buf);
+          buf = line[i];
+        }
+      }
+      if (buf) finalLines.push(buf);
+    });
+    return finalLines;
+  }
+
+  // Shrinks font-size until the text fits within maxLines at maxWidth,
+  // down to minSize; if it still doesn't fit, truncates the last line
+  // with an ellipsis. Used so an unusually long TYPE/TRAIT never breaks
+  // the fixed-size exported card.
+  function fitText(ctx, text, opts) {
+    var size = opts.startSize;
+    var font, lines;
+    do {
+      font = (opts.fontWeight || 400) + " " + size + "px " + opts.fontFamily;
+      lines = wrapText(ctx, text, opts.maxWidth, font);
+      if (lines.length <= opts.maxLines || size <= opts.minSize) break;
+      size -= 2;
+    } while (true);
+
+    if (lines.length > opts.maxLines) {
+      lines = lines.slice(0, opts.maxLines);
+      var last = lines[lines.length - 1];
+      ctx.font = font;
+      while (last.length > 0 && ctx.measureText(last + "…").width > opts.maxWidth) {
+        last = last.slice(0, -1);
+      }
+      lines[lines.length - 1] = last + "…";
+    }
+    return { lines: lines, fontSize: size };
+  }
+
+  function textEl(x, y, text, o) {
+    o = o || {};
+    var attrs =
+      'x="' + x + '" y="' + y + '" font-size="' + (o.size || 28) + '" font-weight="' + (o.weight || 400) +
+      '" fill="' + (o.color || COLORS.textPrimary) + '" text-anchor="' + (o.anchor || "start") + '"';
+    if (o.mono) attrs += ' font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"';
+    if (o.letterSpacing) attrs += ' letter-spacing="' + o.letterSpacing + '"';
+    return "<text " + attrs + ">" + escapeXml(text) + "</text>";
+  }
+
+  function buildBackgroundWaveMarkup() {
+    return (
+      '<g opacity="0.16" stroke-width="2" fill="none">' +
+      '<path d="M-50,190 Q220,130 480,190 T1000,190 T1520,190" stroke="' + COLORS.nacreCyan + '"/>' +
+      '<path d="M-50,240 Q260,175 540,240 T1100,240" stroke="' + COLORS.nacreBlue + '"/>' +
+      "</g>"
+    );
+  }
+
+  // Builds a complete, self-contained SVG document string for the share
+  // card (glyph defs are copied in from the live page so <use> resolves
+  // even though this SVG is rendered outside the document, as an image).
+  function buildCardSVG(fields) {
+    var W = CARD_WIDTH, H = CARD_HEIGHT, cx = W / 2;
+    var measureCanvas = document.createElement("canvas");
+    var mctx = measureCanvas.getContext("2d");
+
+    var roles = parseRoles(fields.ROLES);
+    var top3 = topRoles(roles, 3);
+    if (!top3.length) top3 = [{ name: fields.TYPE, percent: 100 }];
+    var totalTop = top3.reduce(function (s, r) { return s + (r.percent || 0); }, 0) || 1;
+
+    var parts = [];
+    var y = 130;
+
+    parts.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="' + COLORS.bgDeep + '"/>');
+    parts.push(buildBackgroundWaveMarkup());
+    parts.push(textEl(cx, y, "MY AI TYPE", { size: 26, weight: 700, color: COLORS.textMuted, letterSpacing: 8, anchor: "middle" }));
+    y += 70;
+
+    var crestSize = 300;
+    parts.push('<g transform="translate(' + (cx - crestSize / 2) + "," + y + ')">' + buildCrestMarkup(fields, { size: crestSize, idPrefix: "export" }) + "</g>");
+    y += crestSize + 60;
+
+    var typeFit = fitText(mctx, fields.TYPE, { maxWidth: 880, maxLines: 2, startSize: 60, minSize: 36, fontWeight: 700, fontFamily: CARD_FONT });
+    var typeLineHeight = typeFit.fontSize * 1.3;
+    typeFit.lines.forEach(function (line, i) {
+      parts.push(textEl(cx, y + typeLineHeight * (i + 0.8), line, { size: typeFit.fontSize, weight: 700, color: COLORS.textPrimary, anchor: "middle" }));
+    });
+    y += typeLineHeight * typeFit.lines.length + 56;
+
+    var left = 120, right = W - 120, areaWidth = right - left;
+    top3.forEach(function (role) {
+      var pct = role.percent != null ? role.percent : Math.round(100 / top3.length);
+      var nameFit = fitText(mctx, role.name, { maxWidth: areaWidth - 150, maxLines: 1, startSize: 32, minSize: 22, fontWeight: 600, fontFamily: CARD_FONT });
+      parts.push(textEl(left, y + 34, nameFit.lines[0], { size: nameFit.fontSize, weight: 600, color: COLORS.textPrimary, anchor: "start" }));
+      parts.push(textEl(right, y + 34, pct + "%", { size: 26, weight: 500, color: COLORS.textMuted, anchor: "end", mono: true }));
+      var barY = y + 50;
+      parts.push('<rect x="' + left + '" y="' + barY + '" width="' + areaWidth + '" height="6" rx="3" fill="rgba(216,222,226,0.16)"/>');
+      var barW = Math.max(10, areaWidth * (pct / totalTop));
+      parts.push('<rect x="' + left + '" y="' + barY + '" width="' + barW + '" height="6" rx="3" fill="url(#roleGrad)" opacity="0.9"/>');
+      y += 92;
+    });
+    y += 24;
+
+    parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(216,222,226,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
+    y += 60;
+
+    ["TRAIT_1", "TRAIT_2", "TRAIT_3"].forEach(function (key, i) {
+      var traitFit = fitText(mctx, fields[key], { maxWidth: areaWidth - 90, maxLines: 2, startSize: 28, minSize: 20, fontWeight: 400, fontFamily: CARD_FONT });
+      var lineH = traitFit.fontSize * 1.36;
+      parts.push(textEl(left, y + 26, "0" + (i + 1), { size: 22, weight: 700, color: COLORS.nacreCyan, mono: true, anchor: "start" }));
+      traitFit.lines.forEach(function (line, li) {
+        parts.push(textEl(left + 56, y + 26 + lineH * li, line, { size: traitFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "start" }));
+      });
+      y += Math.max(58, lineH * traitFit.lines.length + 30);
+    });
+
+    parts.push(textEl(cx, H - 92, "당신의 AI는 어떤 타입?", { size: 24, weight: 500, color: COLORS.textMuted, anchor: "middle" }));
+    parts.push(textEl(cx, H - 52, "myaitype.kr", { size: 26, weight: 700, color: COLORS.pearlSilver, anchor: "middle", letterSpacing: 2 }));
+
+    var glyphDefsSrc = "";
+    var glyphDefsEl = document.querySelector("svg.glyph-defs");
+    if (glyphDefsEl) glyphDefsSrc = glyphDefsEl.innerHTML;
+
+    return (
+      '<svg xmlns="' + SVG_NS + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '">' +
+      "<style>.glyph{stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}.glyph-dot{fill:currentColor;stroke:none;}text{font-family:" + CARD_FONT + ";}</style>" +
+      "<defs>" + glyphDefsSrc +
+      '<linearGradient id="roleGrad" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0%" stop-color="' + COLORS.nacreCyan + '"/><stop offset="35%" stop-color="' + COLORS.nacreBlue + '"/>' +
+      '<stop offset="65%" stop-color="' + COLORS.nacreViolet + '"/><stop offset="100%" stop-color="' + COLORS.nacreRose + '"/>' +
+      "</linearGradient></defs>" +
+      parts.join("") +
+      "</svg>"
+    );
+  }
+
+  // Renders an SVG string to a PNG Blob via an offscreen canvas. Uses an
+  // object URL (not a data: URI) so the canvas stays same-origin and
+  // toBlob()/toDataURL() never throw a security error.
+  function svgStringToPngBlob(svgString, width, height) {
+    return new Promise(function (resolve, reject) {
+      var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      var url = URL.createObjectURL(svgBlob);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(function (blob) {
+            if (blob) resolve(blob);
+            else reject(new Error("toBlob returned null"));
+          }, "image/png");
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("failed to load card SVG as an image"));
+      };
+      img.src = url;
+    });
+  }
+
+  // ---------- Plain-text share output (kept for copy / text-share) ----------
+  // Uses textContent only (never innerHTML) so pasted ChatGPT text can
+  // never be interpreted as markup.
+  function renderPlainText() {
     if (!lastParsed) return;
     shareOutput.textContent = buildShareText(lastParsed);
-    shareResult.hidden = false;
-    if (navigator.share) {
-      webShareBtn.hidden = false;
-    }
   }
 
   if (parseBtn) {
@@ -394,18 +834,64 @@
 
       lastParsed = result.fields;
       showParseStatus("결과를 찾았습니다 ✓", false);
-      renderShareCard();
+      renderVisualCard(lastParsed);
+      renderPlainText();
+      shareResult.hidden = false;
+      if (navigator.share) {
+        webShareBtn.hidden = false;
+      }
       shareResult.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
-  // Optional feedback (accuracy / opinion) only re-renders an already
-  // generated card — it never gates card creation.
+  // Optional feedback (accuracy / opinion) only updates the plain-text
+  // copy/share output — it never gates card creation and never touches
+  // the visual crest.
   if (accuracySelect) {
-    accuracySelect.addEventListener("change", renderShareCard);
+    accuracySelect.addEventListener("change", renderPlainText);
   }
   if (opinionInput) {
-    opinionInput.addEventListener("input", renderShareCard);
+    opinionInput.addEventListener("input", renderPlainText);
+  }
+
+  if (saveImageBtn) {
+    saveImageBtn.addEventListener("click", function () {
+      if (!lastParsed) return;
+      var originalLabel = saveImageBtn.textContent;
+      saveImageBtn.disabled = true;
+      saveImageBtn.textContent = "생성 중…";
+
+      var svgString;
+      try {
+        svgString = buildCardSVG(lastParsed);
+      } catch (err) {
+        saveImageBtn.disabled = false;
+        saveImageBtn.textContent = originalLabel;
+        showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
+        return;
+      }
+
+      svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT).then(
+        function (blob) {
+          saveImageBtn.disabled = false;
+          saveImageBtn.textContent = originalLabel;
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "my-ai-type.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+          showFeedback(shareFeedback, "이미지를 저장했어요.", false);
+        },
+        function () {
+          saveImageBtn.disabled = false;
+          saveImageBtn.textContent = originalLabel;
+          showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
+        }
+      );
+    });
   }
 
   if (shareCopyBtn) {
@@ -423,11 +909,38 @@
 
   if (webShareBtn) {
     webShareBtn.addEventListener("click", function () {
-      if (navigator.share) {
-        navigator.share({ text: shareOutput.textContent }).catch(function () {
-          /* user cancelled or unsupported — no-op */
-        });
+      if (!navigator.share) return;
+      var text = shareOutput.textContent;
+
+      // Prefer sharing the generated PNG when the platform supports file
+      // sharing; fall back to text-only share (existing behavior) if the
+      // image can't be built or files aren't shareable here.
+      if (lastParsed && navigator.canShare) {
+        var svgString;
+        try {
+          svgString = buildCardSVG(lastParsed);
+        } catch (err) {
+          svgString = null;
+        }
+        if (svgString) {
+          svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT)
+            .then(function (blob) {
+              var file = new File([blob], "my-ai-type.png", { type: "image/png" });
+              if (navigator.canShare({ files: [file] })) {
+                return navigator.share({ files: [file], text: text, title: "MY AI TYPE" });
+              }
+              return navigator.share({ text: text });
+            })
+            .catch(function () {
+              /* user cancelled or unsupported — no-op */
+            });
+          return;
+        }
       }
+
+      navigator.share({ text: text }).catch(function () {
+        /* user cancelled or unsupported — no-op */
+      });
     });
   }
 })();
