@@ -32,32 +32,35 @@ button { font-family: inherit; }
      "moon white" family, not a warm cream/ivory. Bright elements draw
      from four close pearl shades (white / blue / mist / lavender) so
      nothing reads as one flat color; they hand off into the same
-     cyan→blue→violet→pink nacre accents used everywhere else.
+     cyan→blue→periwinkle→pink nacre accents used everywhere else.
      Visual weight is roughly Deep Ink 65% / Blue Black 15% /
      pearl family 12% / nacre accents 8% — nacre stays confined to small
      elements (glyphs, borders, dividers, step numbers, the crest),
-     never large fills. */
+     never large fills. Two narrow gradient-text slices (.brand,
+     .result-card-type) are the only places nacre color touches text —
+     see --gradient-brand / --gradient-keyword below. */
   --bg-deep: #070C10;        /* Deep Ink */
   --bg-surface: #101A22;     /* Blue Black */
   --bg-surface-2: #14202A;   /* Blue Black, one step lighter (cards) */
 
   /* Cool Pearl Neutral palette */
-  --pearl-white: #E8EBE7;
-  --pearl-blue: #DCE5E7;     /* main bright pearl — CTA fill, bright section */
-  --pearl-mist: #D8E0E2;
-  --pearl-lavender: #DFDFE8;
+  --pearl-white: #E7EAF2;
+  --pearl-blue: #D8E2ED;     /* main bright pearl — CTA fill, bright section */
+  --pearl-mist: #D2DCE6;
+  --pearl-lavender: #DCDCF0;
 
   --pearl-bright: var(--pearl-blue);   /* large bright fills */
   --ink-on-pearl: #171B1D;             /* text color used on bright pearl surfaces */
 
   --text-primary: var(--pearl-white);
-  --text-muted: #9C968B;     /* warm gray, not cool gray */
+  --text-muted: #93A0B0;     /* cool slate blue-gray, not warm gray */
 
   --pearl-silver: var(--pearl-white); /* neutral for glyph/icon strokes */
-  --nacre-cyan: #67C6C8;     /* Pearl Cyan */
-  --nacre-blue: #76A8D8;     /* Shell Blue */
-  --nacre-violet: #9B8ACB;   /* Pearl Violet */
-  --nacre-rose: #C78FAF;     /* Shell Pink */
+  --nacre-cyan: #67C6C8;       /* Pearl Cyan */
+  --nacre-blue: #76A8D8;       /* Shell Blue */
+  --nacre-periwinkle: #9B8ACB; /* Pearl Periwinkle (was "Pearl Violet") */
+  --nacre-lavender: #C2A6DD;   /* Pearl Lavender — bridges periwinkle and pink, gradient-text only */
+  --nacre-pink: #C78FAF;       /* Shell Pink (was "Shell Rose") — use sparingly */
 
   --line: rgba(232, 235, 231, 0.14);
   --line-soft: rgba(232, 235, 231, 0.08);
@@ -65,7 +68,14 @@ button { font-family: inherit; }
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --nacre-gradient: linear-gradient(120deg, var(--nacre-cyan), var(--nacre-blue), var(--nacre-violet), var(--nacre-rose));
+  /* Crest / progress-bar gradient — unchanged colors, unchanged order. */
+  --nacre-gradient: linear-gradient(120deg, var(--nacre-cyan), var(--nacre-blue), var(--nacre-periwinkle), var(--nacre-pink));
+
+  /* Subtle gradient text — narrow, adjacent-hue-only, used in exactly two
+     places (see .brand and .result-card-type). Never applied to body text
+     or large headings. */
+  --gradient-brand: linear-gradient(100deg, var(--nacre-cyan) 0%, var(--nacre-blue) 55%, var(--nacre-periwinkle) 100%);
+  --gradient-keyword: linear-gradient(100deg, var(--nacre-blue) 0%, var(--nacre-periwinkle) 55%, var(--nacre-lavender) 100%);
 }
 
 .wrap {
@@ -97,6 +107,21 @@ button { font-family: inherit; }
   font-weight: 700;
   letter-spacing: 0.02em;
   font-size: 0.95rem;
+  /* The page's one always-on gradient text — a narrow cyan→blue→periwinkle
+     slice, not the full nacre range. Solid pearl-white fallback for any
+     browser that doesn't support clipping a background to text.
+     width: fit-content keeps the gradient mapped to the glyphs themselves —
+     .brand-block is a column flex container, so without it the span would
+     stretch to the row's full width and the gradient would mostly render
+     as empty space past the text, reading as flat cyan. */
+  color: var(--pearl-white);
+  width: fit-content;
+  background-image: var(--gradient-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .brand { color: transparent; }
 }
 .brand-sub {
   font-size: 0.68rem;
@@ -128,7 +153,7 @@ button { font-family: inherit; }
 }
 .hero-wave .wave-line--cyan { stroke: var(--nacre-cyan); }
 .hero-wave .wave-line--blue { stroke: var(--nacre-blue); }
-.hero-wave .wave-line--violet { stroke: var(--nacre-violet); }
+.hero-wave .wave-line--violet { stroke: var(--nacre-periwinkle); }
 .hero-wave .wave-chip { opacity: 0.6; }
 .hero-wave .wave-group {
   animation: wave-drift 34s linear infinite;
@@ -247,7 +272,7 @@ section h2 {
 .callout {
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
-  border-left: 2px solid var(--nacre-violet);
+  border-left: 2px solid var(--nacre-periwinkle);
   border-radius: 8px;
   padding: 16px 18px;
   margin-top: 20px;
@@ -278,7 +303,7 @@ section h2 {
    deliberate echo of "색이 조금씩 변화" rather than one flat neutral. */
 .steps .step:nth-child(1) .step-num { border-color: var(--nacre-cyan); color: var(--nacre-cyan); }
 .steps .step:nth-child(2) .step-num { border-color: var(--nacre-blue); color: var(--nacre-blue); }
-.steps .step:nth-child(3) .step-num { border-color: var(--nacre-rose); color: var(--nacre-rose); }
+.steps .step:nth-child(3) .step-num { border-color: var(--nacre-pink); color: var(--nacre-pink); }
 .step h3 { font-size: 1.02rem; margin-bottom: 4px; color: var(--text-primary); }
 .step p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
 
@@ -421,7 +446,7 @@ section h2 {
   color: var(--text-muted);
 }
 .parse-status-success { color: var(--nacre-cyan); }
-.parse-status-error { color: var(--nacre-rose); }
+.parse-status-error { color: var(--nacre-pink); }
 
 .share-actions {
   display: flex;
@@ -463,11 +488,20 @@ section h2 {
 .result-card-type {
   font-size: 1.3rem;
   font-weight: 700;
-  /* Its own pearl shade (Lavender, vs. the page headings' Pearl White) —
-     the same surface catching light at a slightly different angle. */
+  /* The page's other gradient text — blue→periwinkle→lavender, only ever
+     visible after a result is generated (never competes on-screen with
+     .brand, which has scrolled out by then). Solid pearl-lavender
+     fallback for any browser that doesn't support clipping a background
+     to text. */
   color: var(--pearl-lavender);
+  background-image: var(--gradient-keyword);
+  background-clip: text;
+  -webkit-background-clip: text;
   margin: 0 0 18px;
   line-height: 1.4;
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .result-card-type { color: transparent; }
 }
 .result-card-roles {
   display: flex;
