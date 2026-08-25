@@ -37,3 +37,38 @@ index.html   메인 랜딩 페이지 (히어로, 개념 설명, 사용법, 진�
 style.css    모바일 우선 반응형 스타일
 script.js    진단 프롬프트 데이터, 클립보드 복사, 공유 카드 생성 로직
 ```
+
+## 익명 퍼널 분석 (Analytics)
+
+`myaitype.kr` 프로덕션에서만, 자동화 브라우저(`navigator.webdriver`)를
+제외하고 [Umami Cloud](https://cloud.umami.is)로 익명 이벤트를 전송합니다.
+로더는 `index.html`의 `<head>`에, 이벤트 발생 지점은 `script.js`의
+`track()` 호출부에 있습니다.
+
+- 쿠키 없음, 개인 식별자 없음. 전송되는 값은 **이벤트 이름뿐**입니다.
+- 프롬프트 전문, 붙여넣은 ChatGPT 응답, `SHARE_RESULT` 원문,
+  `TYPE`/`ROLES`/`TRAIT_1-3`, 만족도·자유 의견 텍스트는 절대 전송하지
+  않습니다.
+- 각 이벤트는 페이지 로드당 최초 1회만 기록됩니다(재클릭·재생성으로
+  인한 중복 집계 방지).
+- Umami 대시보드에서 사이트를 만든 뒤, `index.html`의
+  `REPLACE_WITH_UMAMI_WEBSITE_ID`를 실제 website ID로 교체해야 이벤트가
+  수집되기 시작합니다.
+
+### 메인 퍼널 (순차 이벤트)
+
+| 이벤트 | 발생 시점 |
+|---|---|
+| `page_view` | 페이지 로드 (Umami 기본 제공, 자동 전송) |
+| `start_observation` | 히어로의 "내 AI 관찰하기" 클릭 |
+| `copy_prompt` | 진단 프롬프트 클립보드 복사 **성공** 시 |
+| `reach_result_input` | 결과 붙여넣기 textarea 최초 focus |
+| `result_generated` | `[SHARE_RESULT]` 파싱 성공(= 결과 카드 생성 성공) |
+
+### 완주 후 참여 이벤트 (퍼널 단계 아님, 순차적이지 않음)
+
+| 이벤트 | 발생 시점 |
+|---|---|
+| `result_image_saved` | 결과 카드 PNG 생성·다운로드 성공 시 |
+| `share_text_copied` | "텍스트 복사하기" 클립보드 복사 성공 시 |
+| `share_sheet_opened` | "결과 공유" 클릭으로 Web Share API 호출 시. 브라우저가 실제 전송 완료 여부를 신뢰성 있게 알려주지 않으므로, 공유 시트를 연 것까지만 측정하고 전송 성공 여부는 측정하지 않습니다. |

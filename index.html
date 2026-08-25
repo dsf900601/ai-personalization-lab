@@ -10,6 +10,24 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="style.css">
+<!-- Anonymous funnel analytics (Umami Cloud). Loaded only on the
+     production domain and only for non-automated browsers — see
+     script.js's "Analytics" section for exactly what is (and isn't)
+     sent. No cookies, no persistent identifier are set by this snippet. -->
+<script>
+(function () {
+  "use strict";
+  if (location.hostname !== "myaitype.kr") return;
+  if (navigator.webdriver === true) return;
+  var s = document.createElement("script");
+  s.async = true;
+  s.src = "https://cloud.umami.is/script.js";
+  // TODO: replace with the real Umami Cloud website ID for myaitype.kr
+  // after creating the site in the Umami dashboard.
+  s.setAttribute("data-website-id", "REPLACE_WITH_UMAMI_WEBSITE_ID");
+  document.head.appendChild(s);
+})();
+</script>
 </head>
 <body>
 
@@ -121,7 +139,7 @@
         당신과 오래 대화한 AI에게 나타나는<br class="mobile-only">
         행동 패턴을 살펴봅니다.
       </p>
-      <a href="#diagnose" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
+      <a href="#diagnose" id="startObservationBtn" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
     </div>
   </section>
 
@@ -291,11 +309,12 @@
   <div class="wrap">
     <p>MY AI TYPE (AI Personalization Lab) — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
     <p>이 사이트는 OpenAI API를 호출하지 않으며, 여러분의 ChatGPT 대화 내용을 수집하지 않습니다.</p>
+    <p>서비스 개선을 위해 버튼 클릭 등 이용 흐름을 쿠키·개인 식별자 없이 익명으로 집계합니다. 대화 내용, 진단 결과, 직접 입력하신 텍스트는 포함되지 않습니다.</p>
   </div>
 </footer>
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=6"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>

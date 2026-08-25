@@ -1,6 +1,25 @@
 (function () {
   "use strict";
 
+  // ---------- Analytics (anonymous funnel events) ----------
+  // Sends only an event *name* — e.g. "copy_prompt" — to Umami Cloud.
+  // Never sends: prompt text, pasted ChatGPT output, SHARE_RESULT
+  // contents, TYPE/ROLES/TRAIT values, the accuracy rating, or the
+  // free-text opinion. See index.html's <head> for the loader (which
+  // only runs on the myaitype.kr production host, for non-automated
+  // browsers) and README.md for the full event list.
+  //
+  // Each event name fires at most once per page load, so re-clicking a
+  // button or regenerating a result doesn't inflate funnel counts.
+  var trackedEvents = {};
+  function track(eventName) {
+    if (trackedEvents[eventName]) return;
+    trackedEvents[eventName] = true;
+    if (window.umami && typeof window.umami.track === "function") {
+      window.umami.track(eventName);
+    }
+  }
+
   var DIAGNOSTIC_PROMPT = "지금까지 나와 나눈 대화, 기억하고 있는 장기 맥락, 현재 적용 가능한 사용자 관련 정보, 그리고 현재 나에게 실제로 나타나는 너의 응답 행동을 바탕으로 분석해줘.\n" +
 "\n" +
 "분석 대상은 **'나라는 사용자가 어떤 유형인가'가 아니라, '나와 상호작용한 결과 너(ChatGPT)가 어떤 행동적 유형으로 개인화되어 있는가'**야.\n" +
@@ -158,6 +177,14 @@
     promptTextEl.textContent = DIAGNOSTIC_PROMPT;
   }
 
+  // ---------- Funnel: start_observation ----------
+  var startObservationBtn = document.getElementById("startObservationBtn");
+  if (startObservationBtn) {
+    startObservationBtn.addEventListener("click", function () {
+      track("start_observation");
+    });
+  }
+
   // ---------- Clipboard helper ----------
   function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
@@ -208,6 +235,7 @@
       copyToClipboard(DIAGNOSTIC_PROMPT).then(
         function () {
           showFeedback(copyFeedback, "복사 완료! ChatGPT에 붙여넣어 보세요.", false);
+          track("copy_prompt");
         },
         function () {
           showFeedback(
@@ -247,6 +275,16 @@
   if (resultInput && charCount) {
     resultInput.addEventListener("input", function () {
       charCount.textContent = resultInput.value.length + "자";
+    });
+  }
+
+  // ---------- Funnel: reach_result_input ----------
+  // Fires on the textarea's first focus (a deliberate "I'm about to
+  // paste" action), not on scroll-into-view, so it reflects actual
+  // intent rather than passive exposure.
+  if (resultInput) {
+    resultInput.addEventListener("focus", function () {
+      track("reach_result_input");
     });
   }
 
@@ -837,6 +875,7 @@
       renderVisualCard(lastParsed);
       renderPlainText();
       shareResult.hidden = false;
+      track("result_generated");
       if (navigator.share) {
         webShareBtn.hidden = false;
       }
@@ -884,6 +923,7 @@
           document.body.removeChild(a);
           setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
           showFeedback(shareFeedback, "이미지를 저장했어요.", false);
+          track("result_image_saved");
         },
         function () {
           saveImageBtn.disabled = false;
@@ -899,6 +939,7 @@
       copyToClipboard(shareOutput.textContent).then(
         function () {
           showFeedback(shareFeedback, "복사 완료! 원하는 곳에 붙여넣어 보세요.", false);
+          track("share_text_copied");
         },
         function () {
           showFeedback(shareFeedback, "복사에 실패했어요. 텍스트를 직접 선택해서 복사해주세요.", true);
@@ -910,6 +951,11 @@
   if (webShareBtn) {
     webShareBtn.addEventListener("click", function () {
       if (!navigator.share) return;
+      // Fires when the OS share sheet is invoked, not when a share
+      // actually completes — the Web Share API's promise doesn't
+      // reliably distinguish "sent" from "cancelled" across browsers,
+      // so we don't claim to measure completion.
+      track("share_sheet_opened");
       var text = shareOutput.textContent;
 
       // Prefer sharing the generated PNG when the platform supports file
