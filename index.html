@@ -65,10 +65,24 @@
       <circle class="glyph" cx="12" cy="12" r="6.5"/>
       <circle class="glyph-dot" cx="12" cy="12" r="1.7"/>
     </symbol>
-    <!-- Core: a lens-shaped mark used at the crest's center -->
-    <symbol id="glyph-core" viewBox="0 0 24 24">
-      <path class="glyph" d="M4.5,12 C7,7.6 9.4,6.5 12,6.5 C14.6,6.5 17,7.6 19.5,12 C17,16.4 14.6,17.5 12,17.5 C9.4,17.5 7,16.4 4.5,12 Z"/>
-      <circle class="glyph-dot" cx="12" cy="12" r="1.4"/>
+    <!-- Thought Wave: the brand's core mark, used at the crest's center
+         and in the hero. Not a wave/eye/icon — two uneven traces of
+         thought that draw close, cross, and drift apart again, with a
+         faint cyan→blue→violet nacre glint on the second trace. Shares
+         the hero's big background wave's visual language, condensed. -->
+    <symbol id="glyph-thought-wave" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="thought-wave-grad" x1="2" y1="9" x2="22" y2="16" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#67C6C8"/>
+          <stop offset="55%" stop-color="#76A8D8"/>
+          <stop offset="100%" stop-color="#9B8ACB"/>
+        </linearGradient>
+      </defs>
+      <path class="glyph" d="M3,10.3 C7,7.3 9.3,13.7 13,11 C16.4,8.6 18.3,12.3 21,9.5"/>
+      <path d="M3.2,14.6 C6.7,16.6 10.4,10.5 13.5,13.1 C16.9,15.9 18.9,11.3 20.8,13.9"
+            fill="none" stroke="url(#thought-wave-grad)" stroke-width="1.4"
+            stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <circle class="glyph-dot" cx="13.1" cy="12.05" r="1.05" opacity="0.75"/>
     </symbol>
   </defs>
 </svg>
@@ -99,7 +113,7 @@
       </g>
     </svg>
     <div class="wrap">
-      <svg class="hero-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-core"/></svg>
+      <svg class="hero-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-thought-wave"/></svg>
       <p class="eyebrow">무료 · 로그인 없음 · 대화 수집 없음</p>
       <h1>내 ChatGPT는 나랑 대화하면서<br>어떤 AI가 됐을까?</h1>
       <p class="hero-sub">
@@ -282,6 +296,6 @@
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=5"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>

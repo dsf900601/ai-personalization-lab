@@ -395,9 +395,9 @@
   // SVG document that has no access to this page's stylesheet/:root.
   var COLORS = {
     bgDeep: "#070C10", // Deep Ink
-    textPrimary: "#D8D0C1", // Soft Ivory — was near-pure-white, now warm
+    textPrimary: "#DFDFE8", // Lavender Pearl — the card title's own pearl shade
     textMuted: "#9C968B", // warm gray, not cool gray
-    pearlSilver: "#D9D6CD", // warm-tinted neutral for glyph strokes
+    pearlSilver: "#E8EBE7", // Pearl White — neutral for glyph strokes
     nacreCyan: "#67C6C8", // Pearl Cyan
     nacreBlue: "#76A8D8", // Shell Blue
     nacreViolet: "#9B8ACB", // Pearl Violet
@@ -529,10 +529,10 @@
 
     var coreSize = size * 0.22;
     var coreMarkup =
-      '<use href="#glyph-core" x="' + (cx - coreSize / 2).toFixed(2) + '" y="' + (cy - coreSize / 2).toFixed(2) +
+      '<use href="#glyph-thought-wave" x="' + (cx - coreSize / 2).toFixed(2) + '" y="' + (cy - coreSize / 2).toFixed(2) +
       '" width="' + coreSize + '" height="' + coreSize + '" color="' + COLORS.pearlSilver + '"/>';
     var ringMarkup =
-      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + strokeW / 2 + 3) + '" fill="none" stroke="rgba(216,208,193,0.22)" stroke-width="1"/>';
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + strokeW / 2 + 3) + '" fill="none" stroke="rgba(232,235,231,0.22)" stroke-width="1"/>';
 
     return "<defs>" + defsMarkup + "</defs>" + ringMarkup + arcsMarkup + glyphsMarkup + coreMarkup;
   }
@@ -734,14 +734,14 @@
       parts.push(textEl(left, y + 34, nameFit.lines[0], { size: nameFit.fontSize, weight: 600, color: COLORS.textPrimary, anchor: "start" }));
       parts.push(textEl(right, y + 34, pct + "%", { size: 26, weight: 500, color: COLORS.textMuted, anchor: "end", mono: true }));
       var barY = y + 50;
-      parts.push('<rect x="' + left + '" y="' + barY + '" width="' + areaWidth + '" height="6" rx="3" fill="rgba(216,208,193,0.16)"/>');
+      parts.push('<rect x="' + left + '" y="' + barY + '" width="' + areaWidth + '" height="6" rx="3" fill="rgba(232,235,231,0.16)"/>');
       var barW = Math.max(10, areaWidth * (pct / totalTop));
       parts.push('<rect x="' + left + '" y="' + barY + '" width="' + barW + '" height="6" rx="3" fill="url(#roleGrad)" opacity="0.9"/>');
       y += 92;
     });
     y += 24;
 
-    parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(216,208,193,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
+    parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
     y += 60;
 
     ["TRAIT_1", "TRAIT_2", "TRAIT_3"].forEach(function (key, i) {

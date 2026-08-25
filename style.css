@@ -28,31 +28,39 @@ button { font-family: inherit; }
 :root {
   /* Design tokens
      Base: Deep Ink (main bg) / Blue Black (secondary bg, cards) /
-     Warm Ivory (bright accent section, CTA fill) / Soft Ivory (headings,
-     primary text — a warm mid-tone, not pure white).
+     Cool Pearl (bright surfaces, CTA fill, headings) — a blue-gray-white
+     "moon white" family, not a warm cream/ivory. Bright elements draw
+     from four close pearl shades (white / blue / mist / lavender) so
+     nothing reads as one flat color; they hand off into the same
+     cyan→blue→violet→pink nacre accents used everywhere else.
      Visual weight is roughly Deep Ink 65% / Blue Black 15% /
-     ivory family 12% / nacre accents 8% — nacre stays confined to small
+     pearl family 12% / nacre accents 8% — nacre stays confined to small
      elements (glyphs, borders, dividers, step numbers, the crest),
      never large fills. */
   --bg-deep: #070C10;        /* Deep Ink */
   --bg-surface: #101A22;     /* Blue Black */
   --bg-surface-2: #14202A;   /* Blue Black, one step lighter (cards) */
 
-  --ivory-warm: #F1EBDD;     /* Warm Ivory — bright section fill / CTA */
-  --ivory-soft: #D8D0C1;     /* Soft Ivory — headings / primary text */
-  --ink-on-ivory: #171B1D;   /* text color used on Warm Ivory surfaces */
+  /* Cool Pearl Neutral palette */
+  --pearl-white: #E8EBE7;
+  --pearl-blue: #DCE5E7;     /* main bright pearl — CTA fill, bright section */
+  --pearl-mist: #D8E0E2;
+  --pearl-lavender: #DFDFE8;
 
-  --text-primary: var(--ivory-soft);
+  --pearl-bright: var(--pearl-blue);   /* large bright fills */
+  --ink-on-pearl: #171B1D;             /* text color used on bright pearl surfaces */
+
+  --text-primary: var(--pearl-white);
   --text-muted: #9C968B;     /* warm gray, not cool gray */
 
-  --pearl-silver: #D9D6CD;   /* warm-tinted neutral for glyph/icon strokes */
+  --pearl-silver: var(--pearl-white); /* neutral for glyph/icon strokes */
   --nacre-cyan: #67C6C8;     /* Pearl Cyan */
   --nacre-blue: #76A8D8;     /* Shell Blue */
   --nacre-violet: #9B8ACB;   /* Pearl Violet */
   --nacre-rose: #C78FAF;     /* Shell Pink */
 
-  --line: rgba(216, 208, 193, 0.14);
-  --line-soft: rgba(216, 208, 193, 0.08);
+  --line: rgba(232, 235, 231, 0.14);
+  --line-soft: rgba(232, 235, 231, 0.08);
   --card-bg: var(--bg-surface);
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -191,12 +199,14 @@ button { font-family: inherit; }
 }
 .btn:active { background: rgba(114, 213, 208, 0.1); }
 .btn-primary {
-  background: var(--ivory-warm);
-  color: var(--ink-on-ivory);
-  border-color: var(--ivory-warm);
+  background: var(--pearl-bright);
+  color: var(--ink-on-pearl);
+  border-color: var(--pearl-bright);
 }
 .btn-primary:hover, .btn-primary:focus-visible {
-  background: var(--pearl-silver);
+  /* A different pearl shade on hover — the surface catching light at a
+     slightly different angle, not just a lighter/darker version of itself. */
+  background: var(--pearl-mist);
   border-color: var(--nacre-cyan);
 }
 .btn-secondary {
@@ -325,15 +335,15 @@ section h2 {
 }
 
 /* ---------- Examples: the page's one bright rest stop ---------- */
-/* A single Warm Ivory section breaks up an otherwise all-dark scroll —
-   text flips to --ink-on-ivory here, everything else in the section
+/* A single Cool Pearl section breaks up an otherwise all-dark scroll —
+   text flips to --ink-on-pearl here, everything else in the section
    inherits it rather than repeating the dark palette a third time in a
    row. Structure/copy unchanged, only the surface flips bright. */
 .examples {
-  background: var(--ivory-warm);
-  color: var(--ink-on-ivory);
+  background: var(--pearl-bright);
+  color: var(--ink-on-pearl);
 }
-.examples h2 { color: var(--ink-on-ivory); }
+.examples h2 { color: var(--ink-on-pearl); }
 .example-list {
   list-style: none;
   display: flex;
@@ -349,7 +359,7 @@ section h2 {
   padding: 8px 16px;
   font-size: 0.84rem;
   font-family: var(--mono);
-  color: var(--ink-on-ivory);
+  color: var(--ink-on-pearl);
 }
 .example-note {
   color: rgba(23, 27, 29, 0.68);
@@ -453,7 +463,9 @@ section h2 {
 .result-card-type {
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--text-primary);
+  /* Its own pearl shade (Lavender, vs. the page headings' Pearl White) —
+     the same surface catching light at a slightly different angle. */
+  color: var(--pearl-lavender);
   margin: 0 0 18px;
   line-height: 1.4;
 }
