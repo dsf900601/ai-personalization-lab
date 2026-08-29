@@ -46,9 +46,9 @@ script.js    진단 프롬프트 데이터, 클립보드 복사, 공유 카드 �
 `track()` 호출부에 있습니다.
 
 - 쿠키 없음, 개인 식별자 없음. 전송되는 값은 **이벤트 이름뿐**입니다.
-- 프롬프트 전문, 붙여넣은 ChatGPT 응답, `SHARE_RESULT` 원문,
-  `TYPE`/`ROLES`/`TRAIT_1-3`, 만족도·자유 의견 텍스트는 절대 전송하지
-  않습니다.
+- 프롬프트 전문, 붙여넣은 ChatGPT 응답, 결과 JSON(Schema 1.0)이나
+  레거시 `SHARE_RESULT` 원문, 그 안의 유형·역할·행동 축 등 어떤 필드도,
+  만족도·자유 의견 텍스트도 절대 전송하지 않습니다.
 - 각 이벤트는 페이지 로드당 최초 1회만 기록됩니다(재클릭·재생성으로
   인한 중복 집계 방지).
 - Umami 대시보드에서 사이트를 만든 뒤, `index.html`의
@@ -63,7 +63,7 @@ script.js    진단 프롬프트 데이터, 클립보드 복사, 공유 카드 �
 | `start_observation` | 히어로의 "내 AI 관찰하기" 클릭 |
 | `copy_prompt` | 진단 프롬프트 클립보드 복사 **성공** 시 |
 | `reach_result_input` | 결과 붙여넣기 textarea 최초 focus |
-| `result_generated` | `[SHARE_RESULT]` 파싱 성공(= 결과 카드 생성 성공) |
+| `result_generated` | 결과 파싱 성공(= 결과 카드 생성 성공). Schema 1.0 JSON 또는 레거시 `[SHARE_RESULT]` 중 어느 쪽이 파싱됐는지는 구분해 전송하지 않습니다 |
 
 ### 완주 후 참여 이벤트 (퍼널 단계 아님, 순차적이지 않음)
 

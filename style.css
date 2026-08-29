@@ -8,6 +8,12 @@
 /* ---------- Reset & base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* The [hidden] attribute must always win. Per the CSS cascade, an
+   author-stylesheet rule beats a user-agent rule of equal or lower
+   specificity regardless of source order — so any of this file's own
+   `display: ...` rules (e.g. #v1Sections, .v1-status-pill) would
+   otherwise silently un-hide an element whose JS only sets `.hidden`. */
+[hidden] { display: none !important; }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
@@ -539,6 +545,17 @@ section h2 {
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .result-card-type { color: transparent; }
 }
+/* Schema 1.0, type.label === null: the headline must not look like a
+   found type (no gradient), while still using the same slot/size as a
+   real one. Higher specificity than the rules above, so it wins in both
+   directions regardless of source order. */
+.result-card-type.v1-type-null {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--text-muted);
+  font-weight: 600;
+}
 .result-card-roles {
   display: flex;
   flex-direction: column;
@@ -603,6 +620,140 @@ section h2 {
   color: var(--text-muted);
   letter-spacing: 0.04em;
 }
+
+/* ---------- Schema 1.0 result sections ---------- */
+/* Shares #resultCard's tokens/glyphs (Digital Najeon), extended rather
+   than redesigned: same dark surfaces, thin lines, single nacre accent
+   per element, no score bars/percentages (Schema 1.0 roles and axes
+   carry no measured proportion to show). */
+.v1-status-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 14px;
+}
+.v1-type-summary {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: -8px 0 18px;
+}
+
+#v1Sections {
+  max-width: 340px;
+  margin: 28px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.v1-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+
+.v1-behavior-list,
+.v1-habit-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v1-behavior-item,
+.v1-habit-item {
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--nacre-cyan);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.v1-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v1-role-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.v1-role-glyph { width: 16px; height: 16px; flex: none; color: var(--pearl-silver); }
+.v1-role-name { flex: 1; color: var(--text-primary); }
+.v1-role-badge {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  flex: none;
+}
+.v1-role-badge-primary { color: var(--nacre-cyan); border-color: rgba(103, 198, 200, 0.4); }
+
+.v1-axis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v1-axis-card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+}
+.v1-axis-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.v1-axis-name { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+.v1-axis-mode { font-size: 0.68rem; color: var(--text-muted); flex: none; }
+.v1-axis-mode-stable { color: var(--nacre-cyan); }
+.v1-axis-mode-conditional { color: var(--nacre-periwinkle); }
+.v1-axis-direction { font-size: 0.85rem; color: var(--text-primary); margin: 0 0 4px; }
+.v1-axis-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+
+.v1-detail {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-surface-2);
+  text-align: left;
+}
+.v1-detail summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  list-style: none;
+}
+.v1-detail summary::-webkit-details-marker { display: none; }
+.v1-detail summary::before { content: "▸ "; color: var(--nacre-cyan); }
+.v1-detail[open] summary::before { content: "▾ "; }
+.v1-detail-body {
+  padding: 0 14px 14px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.v1-detail-body h4 { font-size: 0.78rem; color: var(--text-primary); margin: 12px 0 4px; }
+.v1-detail-body h4:first-child { margin-top: 0; }
+.v1-detail-body p { margin: 0; }
+.v1-detail-body ul { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0; }
 
 .image-actions {
   display: flex;
