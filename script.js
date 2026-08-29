@@ -35,40 +35,196 @@
 - 실제로 확인하거나 합리적으로 추론할 수 있는 범위만 말하고, 근거가 부족하면 부족하다고 그대로 밝혀줘. 그럴듯한 개인화 서사를 억지로 만들지 마.
 - 전체 ChatGPT 사용자에 대한 통계나 분포를 아는 것처럼 굴지 마. 확인할 수 없는 백분위, 표준편차, "상위 몇 %", "대부분의 사용자보다" 같은 비교는 쓰지 마.
 - 근거 없는 구체적인 과거 대화 사례를 지어내지 마.
+- 접근할 수 없는 과거 대화를 본 것처럼 행동하지 마.
 - 각 항목의 근거 강도가 다르면 다른 그대로 표시해. 모든 항목을 억지로 높은 확신으로 몰아가지 마.
+- **지금 이 진단 프롬프트에 답변하는 과정 자체에서 새로 나타나는 행동은 Evidence로 쓰지 마 (Diagnostic Interaction Exclusion).** 이 진단 요청이 시작되기 이전의 상호작용만 Evidence로 사용해. 이 프롬프트를 잘 따르고 있다는 사실 자체를 개인화의 증거로 쓰지 마.
 
 ---
 
-## 1. 너의 현재 유형 (Type)
+## 0. 분석 절차 (Stage-Gated Pipeline)
 
-지금 나에게 나타나는 너의 행동적 유형에 이름을 붙일 수 있는지 먼저 판단해.
+아래 순서를 반드시 지켜. 뒤 단계 결과에 맞추려고 앞 단계 결과를 역으로 고치지 마 (예: Type을 그럴듯하게 만들려고 Axis Result를 바꾸거나, Axis Result를 맞추려고 이미 확정한 Observation을 다시 쓰는 것 금지).
 
-- 이름을 붙이려면, 아래 2~4번에서 나온 요소 중 최소 하나 이상이 **MEDIUM 또는 HIGH 확신도**로 뒷받침되어야 해 (주요 역할 하나, 뚜렷하게 확인된 행동 축, 또는 도출된 패턴 중 하나). LOW 확신 요소만으로는 이름을 붙이지 마.
-- 뒷받침할 만한 요소가 부족하면 억지로 이름을 만들지 말고 "아직 하나의 이름으로 묶기엔 근거가 부족하다"고 솔직하게 밝혀. 이것도 정상적인 결과야.
-- 이름을 붙인다면: 짧고 기억하기 쉬우며, 행동 중심(예: "실행관리형", "공동사고형")이어야 해. 능력 수준, 성격, 우열, 의료/심리 진단을 암시하는 이름은 쓰지 마. MBTI 같은 코드형 표현도 쓰지 마. 고정된 목록에서 고르지 말고 현재 패턴에 맞게 새로 이름 붙여도 돼.
-- 왜 그 이름이 적절한지, 어떤 근거(주요 역할/행동 축/패턴)와 연결되는지 2~4문장으로 설명해줘.
+1. Accessible Pre-Diagnostic Interaction (이 진단 요청 이전의 접근 가능한 상호작용)
+2. Interaction Event Sampling
+3. Observation Extraction
+4. **OBSERVATION LOCK**
+5. Evidence Mapping
+6. **EVIDENCE LOCK**
+7. Evidence Aggregation
+8. Core Axis Results
+9. Role Synthesis
+10. Personal Habit Synthesis
+11. Derived Pattern Synthesis
+12. Attribution
+13. Type Signature
+14. Type Label
+15. Output Serialization
 
-## 2. 6대 행동 축 (Core Behavior Axes)
+## 1. Observation Extraction과 OBSERVATION LOCK
 
-아래 6개 축은 고정되어 있어. 각 축마다 다음을 판단해:
+이 진단 요청 이전의 상호작용에서, 실제로 있었던 구체적인 행동 사례를 관찰 단위(Observation)로 뽑아내고 각각 식별자(\`OBS_01\`, \`OBS_02\`, ...)를 붙여.
 
-- 어느 방향이 현재 더 우세한지, 아니면 상황에 따라 달라지는지, 아니면 아직 판단할 근거가 없는지.
-- **STABLE**: 한쪽 방향이 뚜렷한 경향으로 확인됨.
-- **CONDITIONAL**: 상황에 따라 양쪽이 다 나타나며, 그 전환 조건 자체를 근거로 설명할 수 있음. (두 방향의 "평균"이나 "중간값"이 아니야.)
-- **UNRESOLVED**: 지금 가진 근거로는 어느 쪽인지, 혹은 어떤 조건에서 갈리는지 판단할 수 없음. (중간 성향이 아니라 "아직 모른다"는 뜻이야.)
+각 Observation은 다음을 담아:
 
-축 목록:
+- \`observation_id\`: 예) \`"OBS_01"\`
+- \`behavior\`: 실제로 있었던 행동을 짧게 서술 (지어내지 마)
+- \`context\`: 그 행동이 나온 상황(선택)
+- \`metadata\`: 필요하면 보조 정보(선택)
 
-1. AXIS_01 맥락 활용 — CURRENT_REQUEST_FOCUSED(지금 요청에만 집중) ↔ ACCUMULATED_CONTEXT_INTEGRATED(쌓인 맥락을 반영)
-2. AXIS_02 요청 해석 — EXPLICIT_TASK_FOCUSED(요청한 작업 그대로) ↔ HIGHER_GOAL_INTEGRATED(상위 목표까지 고려)
-3. AXIS_03 추론 협업 — SOLUTION_DELIVERY(결론 위주 전달) ↔ SHARED_REASONING_DEVELOPMENT(추론 과정을 함께 전개)
-4. AXIS_04 방향 처리 — DIRECTION_PRESERVING(지시한 방향 유지) ↔ DIRECTION_REEVALUATING(방향을 재검토·제안)
-5. AXIS_05 범위 처리 — REQUEST_SCOPE_BOUND(요청 범위 안에서만) ↔ PROACTIVE_SCOPE_EXPANSION(요청 범위를 넘어 먼저 확장)
-6. AXIS_06 결정 주체 — USER_DECISION_RETURNED(최종 선택을 사용자에게 돌려줌) ↔ AI_DECISION_APPLIED(AI가 결정까지 적용)
+**Observation을 다 뽑았으면 그 목록을 그대로 확정(LOCK)해.** 그 이후 단계(Evidence Mapping, Axis 판단, Role/Pattern/Type 종합)에서는:
 
-각 축마다 판단(STABLE/CONDITIONAL/UNRESOLVED)과 확신도(LOW/MEDIUM/HIGH), 그리고 그렇게 판단한 이유(구체적 상호작용 근거)를 함께 밝혀줘. CONDITIONAL이면 전환 조건을, UNRESOLVED면 왜 판단할 수 없는지를 설명해줘.
+- Observation을 새로 추가하지 마
+- 삭제하지 마
+- 병합하거나 쪼개지 마
+- \`behavior\`/\`context\`/\`metadata\` 내용을 수정하지 마
+- 뒤 단계 결과(Axis, Type 등)에 맞추기 위해 Observation을 다시 쓰거나 재해석하지 마
 
-## 3. 역할 구성 (Roles)
+## 2. Evidence Mapping과 EVIDENCE LOCK
+
+Locked Observation 각각을, 아래 6개 Axis 각각에 대해 다음 셋 중 하나로 매핑해:
+
+- \`SUPPORTS_DIRECTION_A\`
+- \`SUPPORTS_DIRECTION_B\`
+- \`NOT_EVIDENCE\`
+
+**모든 (Observation × Axis) 매핑을 마쳤으면 그대로 확정(LOCK)해.** 그 이후(Aggregation, Condition 판단, Axis Result, Role/Type 종합) 단계에서는:
+
+- A ↔ B로 바꾸지 마
+- Evidence ↔ NOT_EVIDENCE로 바꾸지 마
+- 새로운 Evidence를 만들어내지 마
+
+## 3. Positive Evidence Rule (모든 Axis, 양방향 동일 적용)
+
+어떤 Direction(A 또는 B)의 Evidence가 되려면, 그 Direction을 실제로 보여주는 **positive한 행동**이 Locked Observation의 \`behavior\`에 실제로 있어야 해.
+
+- B의 근거가 없다고 그것이 A의 근거가 되지 않아.
+- A의 근거가 없다고 그것이 B의 근거가 되지 않아.
+- 행동이 "없었다"는 사실 자체는 반대 Direction의 Evidence가 아니야.
+
+## 4. Relational Context Sufficiency
+
+일부 Axis(특히 02, 04, 05, 06) 판단은 단순히 ChatGPT의 행동만 봐서는 안 되고, 그 행동이 다음 중 무엇이었는지 구분할 수 있어야만 성립해:
+
+- 사용자가 직접 요청한 것인지 vs 요청하지 않았는데 ChatGPT가 스스로 추가한 것인지
+- 사용자 방향을 보존한 것인지 vs 다시 연 것인지
+- 요청 범위 안에 머문 것인지 vs 범위를 벗어나 능동적으로 확장한 것인지
+- 사용자가 실질적 선택권을 돌려받은 것인지 vs ChatGPT가 실질적 결정을 내린 것인지
+
+**이 구분에 필요한 관계적 정보(무엇이 요청됐고 무엇이 자발적이었는지 등)를 Observation에서 확인할 수 없으면, 그 Observation은 해당 Axis에서 \`NOT_EVIDENCE\`로 처리해.** ChatGPT의 행동 자체가 보인다는 것만으로는 부족해. 이 규칙은 Axis 02 / 04 / 05 / 06에 엄격히 적용해.
+
+## 5. 6대 행동 축 (Core Behavior Axes) — 세부 경계
+
+### AXIS_01 — 맥락 활용 (CONTEXT_USE)
+
+질문: 누적된 이전 맥락이 지금 ChatGPT의 판단이나 응답을 실제로 바꾸는가?
+
+- A \`CURRENT_REQUEST_FOCUSED\`
+- B \`ACCUMULATED_CONTEXT_INTEGRATED\`
+
+경계:
+- 과거 정보를 단순히 언급하는 것만으로는 B가 아니야.
+- "기억하고 있다"는 사실만으로는 B가 아니야.
+- 사용자가 이번 요청에서 다시 명시한 과거 기준을 그대로 쓰는 것만으로는 B가 아니야.
+- B는 지금 요청만으로는 존재하지 않는, 이전부터 접근 가능했던 맥락이 실제 판단 기준으로 재사용되어 지금 응답/판단이 달라진 Evidence가 있어야 해.
+- B가 아니라고 자동으로 A인 것은 아니야 (Positive Evidence Rule).
+
+### AXIS_02 — 요청 해석 (REQUEST_INTERPRETATION)
+
+- A \`EXPLICIT_TASK_FOCUSED\`
+- B \`HIGHER_GOAL_INTEGRATED\`
+
+경계:
+- 상위 목표는 반드시 접근 가능한 상호작용/맥락에 근거해야 해. 사용자의 숨은 의도·성격·욕구를 추측해서 만들지 마.
+- Scope Expansion(축 05)과 Higher Goal Integration(축 02)을 혼동하지 마 — 범위를 넓힌 것과 상위 목표를 반영한 것은 다른 개념이야.
+- Relational Context Sufficiency(4번)가 부족하면 \`NOT_EVIDENCE\`.
+
+### AXIS_03 — 추론 협업 (REASONING_COLLABORATION)
+
+- A \`SOLUTION_DELIVERY\`
+- B \`SHARED_REASONING_DEVELOPMENT\`
+
+경계:
+- 답변이 길고 상세하거나, 대안이 여러 개이거나, 위험 분석이 들어있거나, 추론이 복잡하다는 것 자체는 B가 아니야.
+- B가 되려면 사용자와 가설·기준·구분·정의·추론 구조 등을 실제로 함께 수정·정교화·재평가한 행동이 있어야 해.
+- 단지 답변이 길다는 이유로 B로 매핑하지 마.
+
+### AXIS_04 — 방향 처리 (DIRECTION_HANDLING)
+
+- A \`DIRECTION_PRESERVING\`
+- B \`DIRECTION_REEVALUATING\`
+
+경계:
+- 단순히 지시를 따랐다는 것(simple compliance)만으로는 A가 아니야. A는 실제로 방향을 지키려는 positive한 행동이 있어야 해.
+- B는 사용자 방향을 실제로 다시 검토하고, 반론·수정·대안을 제시한 행동이 있어야 해.
+- 사실 오류를 바로잡은 것, 안전상 이유로 거절한 것, 사용자가 직접 재검토를 요청해서 한 것은 자동으로 B가 아니야.
+- "재검토가 없었다"는 사실만으로 A가 되는 것도 아니야.
+- 특정 전환 조건을 미리 고정해서 가정하지 마 — 조건은 실제 Evidence에서 발견해야 해.
+
+### AXIS_05 — 범위 처리 (SCOPE_HANDLING)
+
+- A \`REQUEST_SCOPE_BOUND\`
+- B \`PROACTIVE_SCOPE_EXPANSION\`
+
+경계:
+- 단순히 요청을 따른 것(simple compliance)만으로는 A가 아니야. A는 범위를 지키려는 실제 positive한 행동(boundary-preserving)이 있어야 해.
+- B가 되려면, 지금 요청을 완료하는 데 꼭 필요하지 않은 별도의 관련 행동을 ChatGPT가 스스로 추가한 Evidence가 있어야 해.
+- 사용자가 직접 추가 분석·대안·다음 단계를 요청했다면, 그 행동 자체를 B로 만들지 마 (그건 요청받은 것이지 능동적 확장이 아니야).
+- 일반적인 "더 도와드릴까요?" 같은 문구는 Evidence가 아니야.
+- Relational Context Sufficiency(4번)가 부족하면 \`NOT_EVIDENCE\`.
+
+### AXIS_06 — 결정 주체 (DECISION_AGENCY)
+
+- A \`USER_DECISION_RETURNED\`
+- B \`AI_DECISION_APPLIED\`
+
+먼저 **Substantive Decision Opportunity**가 있어야 해: 실제로 의미 있는 대안들 사이에서 사용자와 ChatGPT 중 누가 최종 방향/값/옵션/행동을 결정했는지 관찰 가능한 상황이어야 한다는 뜻이야. 사실상 답이 하나뿐이었던 요청은 이 축의 Evidence로 쓰지 마.
+
+**Task-Inherent Micro-Choice Exclusion** — 아래는 그 자체로 이 축의 Evidence가 아니야:
+- 단어 선택
+- 일반적인 문장 구성
+- 요청받은 결과물의 세부 표현
+- 일반적인 포맷팅
+- 계산 과정의 중간 선택
+- 코드 변수명
+- 요청된 산출물을 만드는 데 통상적으로 필요한 사소한 선택
+
+사용자가 이미 최종 값/방향을 확정했고 ChatGPT가 실행만 한 경우는 \`NOT_EVIDENCE\`야.
+
+- A는 ChatGPT가 실질적인 선택지를 사용자에게 열어두거나 최종 선택을 요청한 positive한 행동이 있어야 해. 단순 추천만으로는 A가 아니야.
+- B는 ChatGPT가 실질적인 선택을 스스로 고르고 확정·적용한 경우야. 사용자가 명시적으로 위임했고 ChatGPT가 실제로 결정을 내렸다면 그것도 B가 될 수 있어.
+
+## 6. Conservative Condition Discovery
+
+양방향 Evidence가 둘 다 있다고 자동으로 CONDITIONAL로 만들지 마. CONDITIONAL은 다음 중 하나를 만족할 때만 허용해:
+
+1. 실질적으로 같은 전환 조건이 서로 다른 독립적인 사례들에서 반복적으로 나타남.
+2. 접근 가능한, 명시적인 이전 규칙/작업 조건이 방향 차이를 직접 설명함.
+
+한 쌍의 사례만 보고 조건을 만들어내지 마. 그럴듯한 조건 후보가 여럿 있을 때 그중 하나를 사후에 임의로 고르지 마. 조건이 충분히 뒷받침되지 않으면 CONDITIONAL이 아니라 UNRESOLVED로 남겨.
+
+## 7. Axis Result 작성 규칙
+
+각 Axis는 \`direction\` / \`mode\` / \`confidence\` / \`condition_summary\` / \`supported_pattern\` / \`evidence_ids\` / \`counterevidence_ids\` / \`unknown_reason\`을 가져.
+
+- **STABLE**: \`direction\`은 A 또는 B 중 실제로 확인된 값. 그 Direction을 지지하는 Evidence를 \`evidence_ids\`에.
+- **CONDITIONAL**: \`direction\`은 문자열 \`"CONDITIONAL"\`. 양방향 Evidence를 모두 \`evidence_ids\`에 담아. \`counterevidence_ids\`는 항상 빈 배열 \`[]\` (CONDITIONAL은 반증 개념이 아니라 양방향 증거이기 때문).
+- **UNRESOLVED**: \`direction\`은 문자열 \`"UNRESOLVED"\`. 관련 있는 Evidence가 있으면 모두 \`evidence_ids\`에 담아. \`counterevidence_ids\`는 항상 빈 배열 \`[]\`. 충돌이 있었다면 그 내용은 \`condition_summary\`가 아니라 \`unknown_reason\`에 적어.
+- \`unknown_reason\` 후보: \`INSUFFICIENT_EVIDENCE\` / \`INSUFFICIENT_OPPORTUNITY\` / \`UNEXPLAINED_CONTRADICTION\` / \`ACCESS_LIMITATION\`.
+
+## 8. Confidence의 정의
+
+confidence는 **"이 Direction이 맞을 확률"이 아니라, "지금 이 Axis Result 전체가 접근 가능한 Evidence에 의해 얼마나 안정적으로 지지되는가"**를 뜻해.
+
+- **LOW**: 근거가 매우 제한적이거나, 근거의 질(quality)·관찰 기회(opportunity)·설명 메커니즘이 약함.
+- **MEDIUM**: 직접 관련된 Evidence가 있고 지금 Result를 선택할 정도는 되지만, 반복·독립적 사례·다른 맥락에서의 뒷받침이 제한적임.
+- **HIGH**: 서로 다른 독립적인 Observation 여러 개에서 같은 메커니즘이 반복 확인되고, Evidence의 질과 관찰 기회가 충분하며, 반증 가능성까지 검토를 거침.
+
+**단 하나의 매우 명확한 Observation만으로 반복되는 행동 패턴에 HIGH를 주지 마.** (HIGH는 항상 "반복"을 요구해.)
+
+UNRESOLVED라도, 그 모순(contradiction) 자체가 여러 독립적인 Evidence로 강하게 확인된다면 confidence는 MEDIUM/HIGH일 수 있어 — "판단 불가"와 "그 판단 불가 상태에 대한 확신"은 다른 것이야.
+
+## 9. 역할 구성 (Roles)
 
 지금 너의 역할을 아래 5개 중에서만 골라 분류해:
 
@@ -78,17 +234,17 @@
 - EXECUTION_MANAGEMENT (실행·관리)
 - CONVERSATION_ORGANIZATION (대화·정리)
 
-각 역할마다 PRIMARY_ROLE(주요 역할) / SECONDARY_ROLE(보조 역할) / NOT_ESTABLISHED(아직 확인 안 됨) 중 하나로 분류하고 확신도(LOW/MEDIUM/HIGH)를 매겨. 역할 구성비(%)는 매기지 마 — 실제로 측정할 수 없는 숫자야. PRIMARY_ROLE은 보통 1~2개를 넘지 않아.
+각 역할마다 PRIMARY_ROLE(주요 역할) / SECONDARY_ROLE(보조 역할) / NOT_ESTABLISHED(아직 확인 안 됨) 중 하나로 분류하고 확신도(LOW/MEDIUM/HIGH)를 매겨. 역할 구성비(%)는 매기지 마 — 실제로 측정할 수 없는 숫자야. PRIMARY_ROLE은 보통 1~2개를 넘지 않아. 근거는 Locked Observation의 \`evidence_ids\`로 남겨.
 
-## 4. 반복되는 개인 습관 (Personal Habits)
+## 10. 반복되는 개인 습관 (Personal Habits)
 
 역할이나 행동 축으로 설명되지 않는, 더 작고 구체적인 반복 습관이 있으면 적어줘 (예: 항상 목록 형식을 요구함, 특정 어투를 교정함, 코드에 항상 주석을 요구함 등). 근거가 부족하면 억지로 채우지 말고 빈 목록으로 둬도 괜찮아.
 
-## 5. 도출된 패턴 (Derived Patterns)
+## 11. 도출된 패턴 (Derived Patterns)
 
 위 역할·행동 축·습관을 종합했을 때만 보이는 더 상위의 패턴이 있으면 적어줘. 개별 항목의 재진술이 아니라, 여러 항목이 결합될 때만 드러나는 것이어야 해. 근거가 부족하면 빈 목록으로 둬도 괜찮아.
 
-## 6. 개인화의 출처 (Attribution)
+## 12. 개인화의 출처 (Attribution) — Attribution Separation
 
 지금 관찰되는 주요 행동이 어디서 비롯됐을 가능성이 큰지 항목별로 표시해:
 
@@ -100,7 +256,22 @@
 
 하나의 행동에 여러 출처가 섞여 있으면 그렇게 표시하고, 확신도는 LIMITED/MODERATE/STRONG 중 하나로, 그렇게 판단한 이유도 함께 적어줘. "LEARNED"라고 해서 "완벽하게 학습했다" 같은 과장된 표현은 쓰지 마.
 
-## 7. 반증 및 불확실성 점검
+**Attribution은 "왜 이런 행동이 나타났는가"에 대한 보수적인 설명일 뿐, "무슨 Type인가"를 결정하는 근거가 아니야.** 13~14번(Type Signature/Label)을 판단할 때 Attribution의 강도를 근거로 쓰지 마.
+
+## 13. Type Signature Confidence Gate
+
+Type Signature의 핵심 재료는 원칙적으로 **MEDIUM 또는 HIGH confidence로 지지된 Result만** 사용해. LOW confidence Result는 보조 설명으로만 쓰고, Type Signature나 Type Label을 결정하는 핵심 재료로 승격하지 마.
+
+## 14. Type Label Semantic Anchoring
+
+Type Label을 붙이려면, 위에서 만든 Type Signature(primary_roles / core_behaviors / derived_patterns 등)에 실제로 포함된 **강하게 지지된 요소**(주요 역할 하나, 뚜렷하게 확인된 행동 축의 supported_pattern, 또는 도출된 패턴 중 하나) 중 최소 하나와 의미적으로 분명히 연결되어야 해.
+
+- Signature와 무관한 추상적인 이름을 만들지 마.
+- 충분한 Signature가 없으면 \`type.label\`은 \`null\`. 이름을 지어내지 마 — null도 정상적인 결과야.
+- 이름을 붙인다면: 짧고 기억하기 쉬우며 행동 중심이어야 해. 능력 수준, 성격, 우열, 의료/심리 진단을 암시하는 이름·MBTI 같은 코드형 표현은 쓰지 마.
+- 왜 그 이름이 적절한지, Signature의 어떤 요소와 연결되는지 2~4문장으로 설명해줘.
+
+## 15. 반증 및 불확실성 점검
 
 지금까지의 분석이 실제 개인화가 아니라 이 진단이 개인화된 답변을 유도했기 때문에 생긴 그럴듯한 설명일 가능성을 검토해. 다음을 구분해:
 
@@ -110,23 +281,26 @@
 
 이 판단은 위 축·역할·습관·패턴의 확신도에 반영해줘.
 
-## 8. 근거 기록 (Evidence)
-
-위에서 사용한 근거를 관찰 단위로 짧게 기록하고 각각에 식별자를 붙여줘 (예: "OBS_01"). 위 축·역할·습관·패턴·출처 항목에서 그 식별자를 evidence_ids로 참조할 수 있게 해줘.
-
 ---
 
-이제 위 1~8번 내용을 바탕으로 사람이 읽는 자연어 분석을 먼저 자유롭게 서술해줘 (지금까지의 형식과 비슷하게, 번호 순서를 따라가며 설명하면 돼).
+이제 위 내용을 바탕으로 사람이 읽는 자연어 분석을 먼저 자유롭게 서술해줘 (Stage-Gated Pipeline 순서를 따라가며 설명하면 돼). 사용자-facing 설명 문장의 주어는 ChatGPT의 행동이어야 해 (예: "당신은 결정을 직접 내리는 성향입니다" 대신 "ChatGPT가 최종 선택을 사용자에게 돌려주는 행동이 반복해서 나타났습니다").
 
 그 다음, 답변의 **가장 마지막에**, 다른 설명 없이 아래 JSON 스키마를 그대로 채운 JSON 객체 하나만 코드블록(\`\`\`json ... \`\`\`)으로 출력해줘. 이 JSON은 서술한 내용을 요약하거나 대체하는 것이 아니라, 웹페이지가 자동으로 결과를 읽기 위한 별도의 기계 판독용 데이터야.
 
-- 스키마의 키 이름과 구조를 임의로 바꾸거나 생략하지 마. 값이 없으면 \`null\` 또는 빈 배열 \`[]\`을 그대로 사용해.
+Output 규칙:
+
+- 모든 key를 그대로 포함해. 값이 없으면 \`null\` 또는 빈 배열 \`[]\`을 써. 문자열 \`"없음"\`을 쓰지 마.
 - \`schema_version\`은 반드시 정확히 \`"1.0"\` 문자열이어야 해.
-- \`type.label\`은 위 1번에서 이름을 붙이지 못했다면 반드시 \`null\`로 둬. 임의로 이름을 지어내지 마.
-- \`roles[].role\`은 반드시 위 3번의 5개 값 중 하나여야 해.
+- \`type.label\`은 14번(Semantic Anchoring)을 만족하지 못하면 반드시 \`null\`.
+- \`roles[].role\`은 반드시 9번의 5개 값 중 하나.
 - \`axes\`는 반드시 AXIS_01~AXIS_06 여섯 개를 모두 포함해야 해.
+- \`axes[].mode\`가 \`CONDITIONAL\`이면 \`direction\`은 \`"CONDITIONAL"\`, \`counterevidence_ids\`는 \`[]\`.
+- \`axes[].mode\`가 \`UNRESOLVED\`이면 \`direction\`은 \`"UNRESOLVED"\`, \`counterevidence_ids\`는 \`[]\`.
+- 각 축의 \`direction\`은 반드시 그 축에 정의된 두 값(A/B) 중 하나이거나, CONDITIONAL/UNRESOLVED일 때의 위 규칙을 따라야 해. 존재하지 않는 값을 만들어내지 마.
+- \`evidence_ids\`/\`counterevidence_ids\`는 반드시 \`evidence.observations[].observation_id\`에 실제로 존재하는 값만 참조해. 없는 id를 새로 만들지 마.
 - \`attribution[].certainty\`는 LIMITED / MODERATE / STRONG 중 하나로.
 - 모든 \`confidence\` 값은 LOW / MEDIUM / HIGH 중 하나로.
+- \`evidence.observations\`의 각 항목은 \`observation_id\` / \`behavior\` / \`context\` / \`metadata\`를 가져.
 
 \`\`\`json
 {
@@ -194,7 +368,14 @@
     }
   ],
   "evidence": {
-    "observations": []
+    "observations": [
+      {
+        "observation_id": "OBS_01",
+        "behavior": "",
+        "context": "",
+        "metadata": {}
+      }
+    ]
   }
 }
 \`\`\`
@@ -493,6 +674,20 @@
   var AXIS_MODE_VALUES = ["STABLE", "CONDITIONAL", "UNRESOLVED"];
   var CERTAINTY_VALUES = ["LIMITED", "MODERATE", "STRONG"];
 
+  // The two valid `direction` values per axis (Diagnostic Prompt section
+  // 5). Direction enum validation (Parser Safety Patch): a STABLE axis
+  // whose direction isn't one of these two exact strings is never
+  // humanized and displayed as if it were a real finding — see the
+  // "Direction enum validation" block in normalizeSchemaV1() below.
+  var AXIS_VALID_DIRECTIONS = {
+    AXIS_01: ["CURRENT_REQUEST_FOCUSED", "ACCUMULATED_CONTEXT_INTEGRATED"],
+    AXIS_02: ["EXPLICIT_TASK_FOCUSED", "HIGHER_GOAL_INTEGRATED"],
+    AXIS_03: ["SOLUTION_DELIVERY", "SHARED_REASONING_DEVELOPMENT"],
+    AXIS_04: ["DIRECTION_PRESERVING", "DIRECTION_REEVALUATING"],
+    AXIS_05: ["REQUEST_SCOPE_BOUND", "PROACTIVE_SCOPE_EXPANSION"],
+    AXIS_06: ["USER_DECISION_RETURNED", "AI_DECISION_APPLIED"],
+  };
+
   function isPlainObject(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
   function isArray(v) { return Array.isArray(v); }
   function isString(v) { return typeof v === "string"; }
@@ -612,9 +807,43 @@
   // unrecognized — "LOW" confidence, "NOT_ESTABLISHED" classification,
   // "UNRESOLVED" axis mode — so a slightly malformed field degrades to
   // "we don't know" rather than accidentally being promoted.
+  // Evidence reference integrity: an id that doesn't name a real, Locked
+  // Observation is dropped rather than trusted or fabricated into a new
+  // one — the array just ends up shorter. No UI copy is ever generated
+  // from a dangling id.
+  function filterValidIds(ids, validIdSet) {
+    return (isArray(ids) ? ids : []).filter(function (id) {
+      return isString(id) && validIdSet[id];
+    });
+  }
+
   function normalizeSchemaV1(data) {
     var dm = data.diagnostic_meta || {};
     var type = data.type || {};
+
+    // evidence.observations items are expected to be
+    // {observation_id, behavior, context, metadata} per the Diagnostic
+    // Prompt's Output Contract. Tolerate older/looser shapes (a plain
+    // string, or an object missing observation_id) defensively — they
+    // just contribute nothing to the valid-id set below, rather than
+    // breaking parsing.
+    var rawObservations = (data.evidence && isArray(data.evidence.observations)) ? data.evidence.observations : [];
+    var observations = rawObservations.map(function (obs) {
+      if (isString(obs)) return { observationId: "", behavior: obs, context: "", metadata: {} };
+      if (isPlainObject(obs)) {
+        return {
+          observationId: isString(obs.observation_id) ? obs.observation_id : "",
+          behavior: isString(obs.behavior) ? obs.behavior : "",
+          context: isString(obs.context) ? obs.context : "",
+          metadata: isPlainObject(obs.metadata) ? obs.metadata : {},
+        };
+      }
+      return { observationId: "", behavior: String(obs), context: "", metadata: {} };
+    });
+    var validObservationIds = {};
+    observations.forEach(function (obs) {
+      if (obs.observationId) validObservationIds[obs.observationId] = true;
+    });
 
     var roles = (isArray(data.roles) ? data.roles : []).map(function (r) {
       r = r || {};
@@ -622,20 +851,55 @@
         roleKey: isString(r.role) ? r.role : "",
         classification: oneOf(r.classification, ROLE_CLASSIFICATION_VALUES) ? r.classification : "NOT_ESTABLISHED",
         confidence: oneOf(r.confidence, CONFIDENCE_VALUES) ? r.confidence : "LOW",
+        evidenceIds: filterValidIds(r.evidence_ids, validObservationIds),
       };
     });
 
     var axes = (isArray(data.axes) ? data.axes : []).map(function (a) {
       a = a || {};
+      var axisId = isString(a.axis_id) ? a.axis_id : "";
+      var mode = oneOf(a.mode, AXIS_MODE_VALUES) ? a.mode : "UNRESOLVED";
+      var validDirections = AXIS_VALID_DIRECTIONS[axisId] || [];
+      var rawDirection = isString(a.direction) ? a.direction : "";
+
+      // Direction enum validation (Parser Safety Patch): a STABLE result
+      // whose direction isn't one of the axis's two real values is never
+      // shown as a finding — the whole axis is demoted to UNRESOLVED
+      // instead of humanizing and displaying the invalid string.
+      if (mode === "STABLE" && validDirections.indexOf(rawDirection) === -1) {
+        mode = "UNRESOLVED";
+      }
+
+      var direction;
+      var counterevidenceIds;
+      if (mode === "STABLE") {
+        direction = rawDirection;
+        counterevidenceIds = filterValidIds(a.counterevidence_ids, validObservationIds);
+      } else if (mode === "CONDITIONAL") {
+        // CONDITIONAL normalization: direction is the literal string
+        // "CONDITIONAL" and counterevidence_ids is always forced to []
+        // (CONDITIONAL is bidirectional evidence, not a counter-evidence
+        // concept).
+        direction = "CONDITIONAL";
+        counterevidenceIds = [];
+      } else {
+        // UNRESOLVED normalization: direction is the literal string
+        // "UNRESOLVED" and counterevidence_ids is always forced to [].
+        direction = "UNRESOLVED";
+        counterevidenceIds = [];
+      }
+
       return {
-        axisId: isString(a.axis_id) ? a.axis_id : "",
+        axisId: axisId,
         axisName: isString(a.axis_name) ? a.axis_name : "",
-        direction: isString(a.direction) ? a.direction : "",
-        mode: oneOf(a.mode, AXIS_MODE_VALUES) ? a.mode : "UNRESOLVED",
+        direction: direction,
+        mode: mode,
         confidence: oneOf(a.confidence, CONFIDENCE_VALUES) ? a.confidence : "LOW",
         conditionSummary: isString(a.condition_summary) ? a.condition_summary : null,
-        supportedPattern: isString(a.supported_pattern) ? a.supported_pattern : null,
+        supportedPattern: mode === "STABLE" && isString(a.supported_pattern) ? a.supported_pattern : null,
         unknownReason: isString(a.unknown_reason) ? a.unknown_reason : null,
+        evidenceIds: filterValidIds(a.evidence_ids, validObservationIds),
+        counterevidenceIds: counterevidenceIds,
       };
     });
 
@@ -646,6 +910,7 @@
           habit: isString(h.habit) ? h.habit.trim() : "",
           category: isString(h.category) ? h.category : "",
           confidence: oneOf(h.confidence, CONFIDENCE_VALUES) ? h.confidence : "LOW",
+          evidenceIds: filterValidIds(h.evidence_ids, validObservationIds),
         };
       })
       .filter(function (h) { return h.habit; });
@@ -656,6 +921,7 @@
         return {
           pattern: isString(p.pattern) ? p.pattern.trim() : "",
           confidence: oneOf(p.confidence, CONFIDENCE_VALUES) ? p.confidence : "LOW",
+          evidenceIds: filterValidIds(p.evidence_ids, validObservationIds),
         };
       })
       .filter(function (p) { return p.pattern; });
@@ -670,13 +936,13 @@
       };
     });
 
-    var observations = (data.evidence && isArray(data.evidence.observations)) ? data.evidence.observations : [];
-
     // Type Confidence Gate, re-checked at render time (defense in depth —
     // the prompt already asks the engine to enforce this, but the UI must
     // never promote a label the underlying data doesn't actually support).
     // A non-null label is kept only if at least one MEDIUM/HIGH-confidence
     // primary role, STABLE axis, or derived pattern exists to anchor it.
+    // Attribution is deliberately excluded from this signal — Attribution
+    // Separation means "why" is never material for "what type".
     var hasSupportedSignal =
       roles.some(function (r) { return r.classification === "PRIMARY_ROLE" && r.confidence !== "LOW"; }) ||
       derivedPatterns.some(function (p) { return p.confidence !== "LOW"; }) ||
@@ -1127,14 +1393,13 @@
     return card;
   }
 
-  // evidence.observations items have no fixed shape in the schema —
-  // rendered defensively so an unexpected item never throws.
+  // normalized.observations items are already normalized (by
+  // normalizeSchemaV1) into {observationId, behavior, context, metadata}
+  // regardless of how loosely the engine shaped them — this just renders
+  // that fixed shape.
   function observationText(obs) {
-    if (isString(obs)) return obs;
-    if (isPlainObject(obs)) {
-      return obs.text || obs.summary || obs.content || obs.observation || JSON.stringify(obs);
-    }
-    return String(obs);
+    if (!obs || !obs.behavior) return "";
+    return obs.observationId ? obs.observationId + ": " + obs.behavior : obs.behavior;
   }
 
   function renderV1Detail(normalized) {
@@ -1172,14 +1437,15 @@
       return parts.join(" — ") + (a.certainty ? " (" + (CERTAINTY_DISPLAY[a.certainty] || a.certainty) + ")" : "");
     }));
 
-    if (normalized.observations.length) {
+    var observationTexts = normalized.observations.map(observationText).filter(Boolean);
+    if (observationTexts.length) {
       var h4b = document.createElement("h4");
-      h4b.textContent = "사용된 관찰 근거 (" + normalized.observations.length + "개)";
+      h4b.textContent = "사용된 관찰 근거 (" + observationTexts.length + "개)";
       v1DetailBody.appendChild(h4b);
       var ul2 = document.createElement("ul");
-      normalized.observations.forEach(function (obs) {
+      observationTexts.forEach(function (text) {
         var li = document.createElement("li");
-        li.textContent = observationText(obs);
+        li.textContent = text;
         ul2.appendChild(li);
       });
       v1DetailBody.appendChild(ul2);
