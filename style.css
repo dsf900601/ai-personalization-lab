@@ -156,6 +156,15 @@ button { font-family: inherit; }
   z-index: 0;
   pointer-events: none;
 }
+/* Mobile gets its own composition (see index.html) rather than a crop
+   of the desktop one — swapped at the same breakpoint the rest of the
+   page already uses for layout. */
+.hero-wave--desktop { display: none; }
+.hero-wave--mobile { display: block; }
+@media (min-width: 700px) {
+  .hero-wave--desktop { display: block; }
+  .hero-wave--mobile { display: none; }
+}
 .hero-wave .wave-group {
   animation: wave-drift 50s ease-in-out infinite;
   transform-origin: center;
