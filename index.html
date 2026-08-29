@@ -449,7 +449,10 @@
           <p class="result-card-type" id="resultType"></p>
 
           <!-- Schema 1.0, Type Label present only: short behavior summary. -->
-          <p class="v1-type-summary" id="v1TypeSummary" hidden></p>
+          <!-- Holds either one <p> (engine's type.summary) or up to two
+               independent "확인된 행동 · ..." lines — never text that
+               fuses Primary Role with a behavior into one sentence. -->
+          <div class="v1-type-summary" id="v1TypeSummary" hidden></div>
 
           <!-- Schema 1.0 only: small status row below the headline.
                Hidden for legacy results. -->

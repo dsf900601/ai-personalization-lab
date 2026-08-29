@@ -650,10 +650,25 @@ section h2 {
   margin: 0;
 }
 .v1-type-summary {
+  margin: -8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v1-type-summary-text {
   font-size: 0.86rem;
   color: var(--text-muted);
   line-height: 1.55;
-  margin: -8px 0 4px;
+  margin: 0;
+}
+/* Independent confirmed-behavior lines shown under a role-only headline
+   (Result UX v2 follow-up) — deliberately separate lines, never one
+   sentence fused with the headline's Primary Role. */
+.v1-confirmed-behavior {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
 }
 
 #v1Sections {

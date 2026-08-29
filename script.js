@@ -1402,19 +1402,64 @@ Output 규칙:
 
   // Hero headline when type.label is null (Result UX v2, section 1-2):
   // the confirmed behavior becomes the star, not the "no type yet"
-  // notice. Built only from data the engine already produced —
-  // type.summary if the engine wrote one, otherwise Primary Role +
-  // strongest MEDIUM/HIGH behavior. Never invents a type name or new
-  // diagnostic content.
+  // notice — but it must never fuse two independent Supported Results
+  // (e.g. Primary Role + an unrelated Axis behavior) into one
+  // synthesized sentence. Doing so would imply a Role -> Behavior
+  // relationship the engine never established, recreating the
+  // "independent evidence combined after the fact" problem Derived
+  // Pattern synthesis exists to prevent. Each branch here uses exactly
+  // one independent result; anything else worth showing goes in the
+  // supporting area below, kept visually separate — see
+  // renderTypeSupportingArea().
   function buildHeroHeadline(normalized, behaviors, primaryRole) {
     if (normalized.typeLabel) return normalized.typeLabel;
-    if (normalized.typeSummary) return sanitizeUserFacingText(normalized.typeSummary);
-    if (primaryRole && behaviors[0]) {
-      return roleDisplayName(primaryRole.roleKey) + " 역할을 맡은 ChatGPT예요. " + behaviors[0].text;
-    }
+    if (primaryRole) return "ChatGPT가 " + roleDisplayName(primaryRole.roleKey) + " 역할을 주로 맡고 있어요.";
     if (behaviors[0]) return behaviors[0].text;
-    if (primaryRole) return roleDisplayName(primaryRole.roleKey) + " 역할을 주로 맡고 있는 ChatGPT예요.";
     return "아직 뚜렷하게 확인된 행동 패턴이 많지 않아요.";
+  }
+
+  // Content for the small text under the Hero headline.
+  // - Type Label present: the engine's own type.summary (unchanged).
+  // - Type Label null, headline used Primary Role alone: confirmed
+  //   behaviors are listed as independent "확인된 행동 · ..." lines —
+  //   never woven into one sentence with the role, so no new Role <->
+  //   Behavior relationship is implied.
+  // - Type Label null, no Primary Role (headline already used a
+  //   behavior, or nothing at all): falls back to type.summary if the
+  //   engine wrote one, sanitized; otherwise nothing to show.
+  // Returns true if it rendered anything (caller uses this to decide
+  // whether to unhide the container).
+  function renderTypeSupportingArea(container, normalized, primaryRoleUsedAsHeadline, behaviors) {
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    if (normalized.typeLabel) {
+      if (!normalized.typeSummary) return false;
+      var p = document.createElement("p");
+      p.className = "v1-type-summary-text";
+      p.textContent = sanitizeUserFacingText(normalized.typeSummary);
+      container.appendChild(p);
+      return true;
+    }
+
+    if (primaryRoleUsedAsHeadline && behaviors.length) {
+      behaviors.slice(0, 2).forEach(function (b) {
+        var line = document.createElement("p");
+        line.className = "v1-confirmed-behavior";
+        line.textContent = "확인된 행동 · " + b.text;
+        container.appendChild(line);
+      });
+      return true;
+    }
+
+    if (normalized.typeSummary) {
+      var p2 = document.createElement("p");
+      p2.className = "v1-type-summary-text";
+      p2.textContent = sanitizeUserFacingText(normalized.typeSummary);
+      container.appendChild(p2);
+      return true;
+    }
+
+    return false;
   }
 
   function buildGlyphSvg(glyphCategory, className) {
@@ -1636,8 +1681,12 @@ Output 규칙:
     resultType.textContent = buildHeroHeadline(normalized, behaviors, primaryRole);
     resultType.classList.toggle("v1-headline-plain", !hasLabel);
 
-    v1TypeSummary.hidden = !(hasLabel && normalized.typeSummary);
-    v1TypeSummary.textContent = hasLabel ? sanitizeUserFacingText(normalized.typeSummary) || "" : "";
+    // primaryRoleUsedAsHeadline mirrors buildHeroHeadline()'s own
+    // branch order exactly, so the supporting area never repeats
+    // whatever the headline already said.
+    var primaryRoleUsedAsHeadline = !hasLabel && !!primaryRole;
+    var hasSupporting = renderTypeSupportingArea(v1TypeSummary, normalized, primaryRoleUsedAsHeadline, behaviors);
+    v1TypeSummary.hidden = !hasSupporting;
 
     v1StatusRow.hidden = false;
     v1TypePendingPill.hidden = hasLabel;
@@ -2020,7 +2069,7 @@ Output 규칙:
       if (behaviors[0]) lines.push(behaviors[0].text);
       if (behaviors[1]) lines.push(behaviors[1].text);
       lines.push("");
-      lines.push("TYPE LABEL · 아직 분석 중");
+      lines.push(TYPE_PENDING_BADGE);
     }
 
     if (accuracySelect && accuracySelect.value) {
