@@ -10,6 +10,24 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="style.css">
+<!-- Anonymous funnel analytics (Umami Cloud). Loaded only on the
+     production domain and only for non-automated browsers — see
+     script.js's "Analytics" section for exactly what is (and isn't)
+     sent. No cookies, no persistent identifier are set by this snippet. -->
+<script>
+(function () {
+  "use strict";
+  if (location.hostname !== "myaitype.kr") return;
+  if (navigator.webdriver === true) return;
+  var s = document.createElement("script");
+  s.async = true;
+  s.src = "https://cloud.umami.is/script.js";
+  // TODO: replace with the real Umami Cloud website ID for myaitype.kr
+  // after creating the site in the Umami dashboard.
+  s.setAttribute("data-website-id", "REPLACE_WITH_UMAMI_WEBSITE_ID");
+  document.head.appendChild(s);
+})();
+</script>
 </head>
 <body>
 
@@ -100,16 +118,41 @@
 
   <!-- HERO -->
   <section class="hero">
+    <!-- Two long, differently-curved traces that cross once. Each is
+         drawn twice: a near-invisible base stroke along its whole length,
+         then the same path again with a gradient stroke whose stops fade
+         to 0 opacity except in a narrow band around the crossing — so
+         nacre color only ever appears where the two traces meet, not
+         along their full length. Echoes glyph-thought-wave's own
+         "two traces, one lit" language at hero scale. -->
     <svg class="hero-wave" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="heroTraceHotA" gradientUnits="userSpaceOnUse" x1="130" y1="0" x2="280" y2="0">
+          <stop offset="0%" stop-color="var(--nacre-cyan)" stop-opacity="0"/>
+          <stop offset="45%" stop-color="var(--nacre-cyan)" stop-opacity="0.55"/>
+          <stop offset="70%" stop-color="var(--nacre-blue)" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="var(--nacre-blue)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="heroTraceHotB" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="300" y2="0">
+          <stop offset="0%" stop-color="var(--nacre-periwinkle)" stop-opacity="0"/>
+          <stop offset="50%" stop-color="var(--nacre-periwinkle)" stop-opacity="0.5"/>
+          <stop offset="75%" stop-color="var(--nacre-lavender)" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="var(--nacre-lavender)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="heroFragGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="var(--nacre-cyan)"/>
+          <stop offset="100%" stop-color="var(--nacre-periwinkle)"/>
+        </linearGradient>
+      </defs>
       <g class="wave-group">
-        <path class="wave-line wave-line--cyan" d="M-20,150 Q60,120 140,150 T300,150 T460,150"/>
-        <path class="wave-line wave-line--blue" d="M-20,170 Q80,145 160,170 T320,170 T480,170"/>
-      </g>
-      <g class="wave-group wave-group--slow">
-        <path class="wave-line wave-line--violet" d="M-20,190 Q100,165 200,190 T420,190"/>
-        <circle class="wave-chip" cx="70" cy="128" r="2" fill="var(--nacre-cyan)"/>
-        <circle class="wave-chip" cx="210" cy="158" r="1.6" fill="var(--nacre-rose)"/>
-        <circle class="wave-chip" cx="330" cy="140" r="2.2" fill="var(--nacre-violet)"/>
+        <path class="trace-base" d="M -40,85 C 20,50 60,50 100,65 C 150,85 180,105 220,120 C 260,135 300,155 340,165 C 380,173 420,160 460,145"/>
+        <path class="trace-base" d="M -40,205 C 20,195 70,193 120,185 C 160,178 190,150 220,120 C 250,90 290,85 340,95 C 380,103 420,113 460,125"/>
+        <path class="trace-hot" stroke="url(#heroTraceHotA)" d="M -40,85 C 20,50 60,50 100,65 C 150,85 180,105 220,120 C 260,135 300,155 340,165 C 380,173 420,160 460,145"/>
+        <path class="trace-hot" stroke="url(#heroTraceHotB)" d="M -40,205 C 20,195 70,193 120,185 C 160,178 190,150 220,120 C 250,90 290,85 340,95 C 380,103 420,113 460,125"/>
+        <!-- Two small irregular fragments, kept in the open margins above
+             and below the headline rather than on top of it. -->
+        <path class="wave-fragment" fill="url(#heroFragGrad)" opacity="0.45" d="M225,45 L231,39 L237,47 L230,55 L222,51 Z"/>
+        <path class="wave-fragment" fill="url(#heroFragGrad)" opacity="0.35" d="M270,176 L275,171 L281,177 L274,183 Z"/>
       </g>
     </svg>
     <div class="wrap">
@@ -121,7 +164,7 @@
         당신과 오래 대화한 ChatGPT가<br class="mobile-only">
         어떤 AI처럼 행동하고 있는지 살펴봅니다.
       </p>
-      <a href="#diagnose" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
+      <a href="#diagnose" id="startObservationBtn" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
     </div>
   </section>
 
@@ -291,14 +334,20 @@
 </main>
 
 <footer class="site-footer">
+  <!-- Hero's trace, echoed once more here at very low opacity and with
+       no nacre gradient — a quiet close, not a second highlight moment. -->
+  <svg class="footer-wave" viewBox="0 0 400 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M -30,50 C 40,25 90,70 150,50 C 210,30 250,65 320,45 C 360,33 380,50 430,40"/>
+  </svg>
   <div class="wrap">
     <p>MY AI TYPE (AI Personalization Lab) — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
     <p>이 사이트는 OpenAI API를 호출하지 않으며, 여러분의 ChatGPT 대화 내용을 수집하지 않습니다.</p>
+    <p>서비스 개선을 위해 버튼 클릭 등 이용 흐름을 쿠키·개인 식별자 없이 익명으로 집계합니다. 대화 내용, 진단 결과, 직접 입력하신 텍스트는 포함되지 않습니다.</p>
   </div>
 </footer>
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=6"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>

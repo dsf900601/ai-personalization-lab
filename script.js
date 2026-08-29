@@ -1,6 +1,25 @@
 (function () {
   "use strict";
 
+  // ---------- Analytics (anonymous funnel events) ----------
+  // Sends only an event *name* — e.g. "copy_prompt" — to Umami Cloud.
+  // Never sends: prompt text, pasted ChatGPT output, SHARE_RESULT
+  // contents, TYPE/ROLES/TRAIT values, the accuracy rating, or the
+  // free-text opinion. See index.html's <head> for the loader (which
+  // only runs on the myaitype.kr production host, for non-automated
+  // browsers) and README.md for the full event list.
+  //
+  // Each event name fires at most once per page load, so re-clicking a
+  // button or regenerating a result doesn't inflate funnel counts.
+  var trackedEvents = {};
+  function track(eventName) {
+    if (trackedEvents[eventName]) return;
+    trackedEvents[eventName] = true;
+    if (window.umami && typeof window.umami.track === "function") {
+      window.umami.track(eventName);
+    }
+  }
+
   var DIAGNOSTIC_PROMPT = "지금까지 나와 나눈 대화, 기억하고 있는 장기 맥락, 현재 적용 가능한 사용자 관련 정보, 그리고 현재 나에게 실제로 나타나는 너의 응답 행동을 바탕으로 분석해줘.\n" +
 "\n" +
 "분석 대상은 **'나라는 사용자가 어떤 유형인가'가 아니라, '나와 상호작용한 결과 너(ChatGPT)가 어떤 행동적 유형으로 개인화되어 있는가'**야.\n" +
@@ -158,6 +177,14 @@
     promptTextEl.textContent = DIAGNOSTIC_PROMPT;
   }
 
+  // ---------- Funnel: start_observation ----------
+  var startObservationBtn = document.getElementById("startObservationBtn");
+  if (startObservationBtn) {
+    startObservationBtn.addEventListener("click", function () {
+      track("start_observation");
+    });
+  }
+
   // ---------- Clipboard helper ----------
   function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
@@ -208,6 +235,7 @@
       copyToClipboard(DIAGNOSTIC_PROMPT).then(
         function () {
           showFeedback(copyFeedback, "복사 완료! ChatGPT에 붙여넣어 보세요.", false);
+          track("copy_prompt");
         },
         function () {
           showFeedback(
@@ -247,6 +275,16 @@
   if (resultInput && charCount) {
     resultInput.addEventListener("input", function () {
       charCount.textContent = resultInput.value.length + "자";
+    });
+  }
+
+  // ---------- Funnel: reach_result_input ----------
+  // Fires on the textarea's first focus (a deliberate "I'm about to
+  // paste" action), not on scroll-into-view, so it reflects actual
+  // intent rather than passive exposure.
+  if (resultInput) {
+    resultInput.addEventListener("focus", function () {
+      track("reach_result_input");
     });
   }
 
@@ -393,15 +431,19 @@
   // Mirrors the CSS custom properties in style.css. Duplicated here (as
   // literal hex) because the exported PNG is rendered from a standalone
   // SVG document that has no access to this page's stylesheet/:root.
+  // Mirrors style.css's :root tokens exactly (same Digital Najeon
+  // palette as the on-page card) so the exported/shared PNG never drifts
+  // from what's rendered on myaitype.kr. If those tokens change, update
+  // both places.
   var COLORS = {
     bgDeep: "#070C10", // Deep Ink
-    textPrimary: "#DFDFE8", // Lavender Pearl — the card title's own pearl shade
-    textMuted: "#9C968B", // warm gray, not cool gray
-    pearlSilver: "#E8EBE7", // Pearl White — neutral for glyph strokes
+    pearlWhite: "#E7EAF2", // Cool Pearl White — role names, glyph strokes, myaitype.kr wordmark
+    textMuted: "#93A0B0", // cool slate blue-gray, not warm gray
     nacreCyan: "#67C6C8", // Pearl Cyan
     nacreBlue: "#76A8D8", // Shell Blue
-    nacreViolet: "#9B8ACB", // Pearl Violet
-    nacreRose: "#C78FAF", // Shell Pink
+    nacrePeriwinkle: "#9B8ACB", // Pearl Periwinkle
+    nacreLavender: "#C2A6DD", // Pearl Lavender — gradient-text only
+    nacrePink: "#C78FAF", // Shell Pink — use sparingly
   };
 
   // Ordered keyword groups: first category whose keyword appears in the
@@ -488,8 +530,8 @@
     var stops = [
       ["0%", COLORS.nacreCyan],
       ["35%", COLORS.nacreBlue],
-      ["65%", COLORS.nacreViolet],
-      ["100%", COLORS.nacreRose],
+      ["65%", COLORS.nacrePeriwinkle],
+      ["100%", COLORS.nacrePink],
     ];
 
     var defsMarkup = "";
@@ -522,7 +564,7 @@
       var glyphId = "glyph-" + mapRoleToGlyph(role.name);
       glyphsMarkup +=
         '<use href="#' + glyphId + '" x="' + (gx - glyphSize / 2).toFixed(2) + '" y="' + (gy - glyphSize / 2).toFixed(2) +
-        '" width="' + glyphSize + '" height="' + glyphSize + '" color="' + COLORS.pearlSilver + '"/>';
+        '" width="' + glyphSize + '" height="' + glyphSize + '" color="' + COLORS.pearlWhite + '"/>';
 
       angleCursor += sweepDeg + gapDeg;
     });
@@ -530,7 +572,7 @@
     var coreSize = size * 0.22;
     var coreMarkup =
       '<use href="#glyph-thought-wave" x="' + (cx - coreSize / 2).toFixed(2) + '" y="' + (cy - coreSize / 2).toFixed(2) +
-      '" width="' + coreSize + '" height="' + coreSize + '" color="' + COLORS.pearlSilver + '"/>';
+      '" width="' + coreSize + '" height="' + coreSize + '" color="' + COLORS.pearlWhite + '"/>';
     var ringMarkup =
       '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + strokeW / 2 + 3) + '" fill="none" stroke="rgba(232,235,231,0.22)" stroke-width="1"/>';
 
@@ -680,7 +722,7 @@
     o = o || {};
     var attrs =
       'x="' + x + '" y="' + y + '" font-size="' + (o.size || 28) + '" font-weight="' + (o.weight || 400) +
-      '" fill="' + (o.color || COLORS.textPrimary) + '" text-anchor="' + (o.anchor || "start") + '"';
+      '" fill="' + (o.color || COLORS.pearlWhite) + '" text-anchor="' + (o.anchor || "start") + '"';
     if (o.mono) attrs += ' font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"';
     if (o.letterSpacing) attrs += ' letter-spacing="' + o.letterSpacing + '"';
     return "<text " + attrs + ">" + escapeXml(text) + "</text>";
@@ -720,10 +762,13 @@
     parts.push('<g transform="translate(' + (cx - crestSize / 2) + "," + y + ')">' + buildCrestMarkup(fields, { size: crestSize, idPrefix: "export" }) + "</g>");
     y += crestSize + 60;
 
+    // Same blue→periwinkle→lavender gradient as .result-card-type on the
+    // web (--gradient-keyword) — fill="url(#...)" works directly on SVG
+    // <text>, no clip-path trick needed like the HTML/CSS version.
     var typeFit = fitText(mctx, fields.TYPE, { maxWidth: 880, maxLines: 2, startSize: 60, minSize: 36, fontWeight: 700, fontFamily: CARD_FONT });
     var typeLineHeight = typeFit.fontSize * 1.3;
     typeFit.lines.forEach(function (line, i) {
-      parts.push(textEl(cx, y + typeLineHeight * (i + 0.8), line, { size: typeFit.fontSize, weight: 700, color: COLORS.textPrimary, anchor: "middle" }));
+      parts.push(textEl(cx, y + typeLineHeight * (i + 0.8), line, { size: typeFit.fontSize, weight: 700, color: "url(#typeGrad)", anchor: "middle" }));
     });
     y += typeLineHeight * typeFit.lines.length + 56;
 
@@ -731,7 +776,7 @@
     top3.forEach(function (role) {
       var pct = role.percent != null ? role.percent : Math.round(100 / top3.length);
       var nameFit = fitText(mctx, role.name, { maxWidth: areaWidth - 150, maxLines: 1, startSize: 32, minSize: 22, fontWeight: 600, fontFamily: CARD_FONT });
-      parts.push(textEl(left, y + 34, nameFit.lines[0], { size: nameFit.fontSize, weight: 600, color: COLORS.textPrimary, anchor: "start" }));
+      parts.push(textEl(left, y + 34, nameFit.lines[0], { size: nameFit.fontSize, weight: 600, color: COLORS.pearlWhite, anchor: "start" }));
       parts.push(textEl(right, y + 34, pct + "%", { size: 26, weight: 500, color: COLORS.textMuted, anchor: "end", mono: true }));
       var barY = y + 50;
       parts.push('<rect x="' + left + '" y="' + barY + '" width="' + areaWidth + '" height="6" rx="3" fill="rgba(232,235,231,0.16)"/>');
@@ -755,7 +800,7 @@
     });
 
     parts.push(textEl(cx, H - 92, "당신의 AI는 어떤 타입?", { size: 24, weight: 500, color: COLORS.textMuted, anchor: "middle" }));
-    parts.push(textEl(cx, H - 52, "myaitype.kr", { size: 26, weight: 700, color: COLORS.pearlSilver, anchor: "middle", letterSpacing: 2 }));
+    parts.push(textEl(cx, H - 52, "myaitype.kr", { size: 26, weight: 700, color: COLORS.pearlWhite, anchor: "middle", letterSpacing: 2 }));
 
     var glyphDefsSrc = "";
     var glyphDefsEl = document.querySelector("svg.glyph-defs");
@@ -767,7 +812,16 @@
       "<defs>" + glyphDefsSrc +
       '<linearGradient id="roleGrad" x1="0" y1="0" x2="1" y2="0">' +
       '<stop offset="0%" stop-color="' + COLORS.nacreCyan + '"/><stop offset="35%" stop-color="' + COLORS.nacreBlue + '"/>' +
-      '<stop offset="65%" stop-color="' + COLORS.nacreViolet + '"/><stop offset="100%" stop-color="' + COLORS.nacreRose + '"/>' +
+      '<stop offset="65%" stop-color="' + COLORS.nacrePeriwinkle + '"/><stop offset="100%" stop-color="' + COLORS.nacrePink + '"/>' +
+      "</linearGradient>" +
+      // Mirrors --gradient-keyword (blue→periwinkle→lavender) — the same
+      // gradient .result-card-type uses on the web, applied per <text>
+      // line via objectBoundingBox so multi-line TYPE names get the same
+      // left-to-right sweep on each line.
+      '<linearGradient id="typeGrad" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0%" stop-color="' + COLORS.nacreBlue + '"/>' +
+      '<stop offset="55%" stop-color="' + COLORS.nacrePeriwinkle + '"/>' +
+      '<stop offset="100%" stop-color="' + COLORS.nacreLavender + '"/>' +
       "</linearGradient></defs>" +
       parts.join("") +
       "</svg>"
@@ -837,6 +891,7 @@
       renderVisualCard(lastParsed);
       renderPlainText();
       shareResult.hidden = false;
+      track("result_generated");
       if (navigator.share) {
         webShareBtn.hidden = false;
       }
@@ -884,6 +939,7 @@
           document.body.removeChild(a);
           setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
           showFeedback(shareFeedback, "이미지를 저장했어요.", false);
+          track("result_image_saved");
         },
         function () {
           saveImageBtn.disabled = false;
@@ -899,6 +955,7 @@
       copyToClipboard(shareOutput.textContent).then(
         function () {
           showFeedback(shareFeedback, "복사 완료! 원하는 곳에 붙여넣어 보세요.", false);
+          track("share_text_copied");
         },
         function () {
           showFeedback(shareFeedback, "복사에 실패했어요. 텍스트를 직접 선택해서 복사해주세요.", true);
@@ -910,6 +967,11 @@
   if (webShareBtn) {
     webShareBtn.addEventListener("click", function () {
       if (!navigator.share) return;
+      // Fires when the OS share sheet is invoked, not when a share
+      // actually completes — the Web Share API's promise doesn't
+      // reliably distinguish "sent" from "cancelled" across browsers,
+      // so we don't claim to measure completion.
+      track("share_sheet_opened");
       var text = shareOutput.textContent;
 
       // Prefer sharing the generated PNG when the platform supports file
