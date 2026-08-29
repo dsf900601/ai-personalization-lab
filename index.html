@@ -440,11 +440,54 @@
         <div class="result-card" id="resultCard">
           <p class="result-card-brand">MY AI TYPE</p>
           <svg id="resultCrest" class="result-card-crest" viewBox="0 0 160 160" aria-hidden="true"></svg>
+
+          <!-- Schema 1.0 only: diagnostic status pill + one-line summary,
+               shown above/below the type name. Hidden for legacy results. -->
+          <p class="v1-status-pill" id="v1StatusPill" hidden></p>
+
           <p class="result-card-type" id="resultType"></p>
-          <div class="result-card-roles" id="resultRoles"></div>
-          <hr class="result-card-divider">
-          <ol class="result-card-traits" id="resultTraits"></ol>
+
+          <p class="v1-type-summary" id="v1TypeSummary" hidden></p>
+
+          <!-- Legacy [SHARE_RESULT] only: role % bars + top-3 traits. -->
+          <div id="resultLegacyBody">
+            <div class="result-card-roles" id="resultRoles"></div>
+            <hr class="result-card-divider">
+            <ol class="result-card-traits" id="resultTraits"></ol>
+          </div>
+
           <p class="result-card-footer">myaitype.kr</p>
+        </div>
+
+        <!-- Schema 1.0 only: sections below the card. Digital Najeon
+             styling is reused (same tokens/glyphs as the card above);
+             each section hides itself when its data is empty rather than
+             padding the page with empty cards. -->
+        <div id="v1Sections" hidden>
+          <section class="v1-section" id="v1BehaviorSection">
+            <h3 class="v1-section-title">당신의 ChatGPT는 이렇게 작동해요</h3>
+            <ul class="v1-behavior-list" id="v1BehaviorList"></ul>
+          </section>
+
+          <section class="v1-section" id="v1RoleSection">
+            <h3 class="v1-section-title">역할</h3>
+            <div class="v1-role-list" id="v1RoleList"></div>
+          </section>
+
+          <section class="v1-section" id="v1AxisSection">
+            <h3 class="v1-section-title">ChatGPT의 행동 축</h3>
+            <div class="v1-axis-list" id="v1AxisList"></div>
+          </section>
+
+          <section class="v1-section" id="v1HabitSection" hidden>
+            <h3 class="v1-section-title">반복되는 습관</h3>
+            <ul class="v1-habit-list" id="v1HabitList"></ul>
+          </section>
+
+          <details class="v1-detail" id="v1DetailAccordion">
+            <summary>진단 상세 정보</summary>
+            <div class="v1-detail-body" id="v1DetailBody"></div>
+          </details>
         </div>
 
         <!-- Plain-text version, kept for clipboard copy / text share -->
@@ -496,6 +539,6 @@
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=8"></script>
+<script src="script.js?v=9"></script>
 </body>
 </html>
