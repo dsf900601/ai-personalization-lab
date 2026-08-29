@@ -102,11 +102,22 @@ button { font-family: inherit; }
   padding: 18px 0;
   border-bottom: 1px solid var(--line-soft);
 }
+/* A quiet brand signature: the thought-wave glyph + wordmark as one
+   lockup, not a navbar (no links/menu). Deliberately still small next
+   to the Hero. */
+.brand-lockup { display: flex; align-items: center; gap: 10px; }
+.brand-glyph {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  color: var(--pearl-white);
+  opacity: 0.9;
+}
 .brand-block { display: flex; flex-direction: column; line-height: 1.2; }
 .brand {
   font-weight: 700;
   letter-spacing: 0.02em;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   /* The page's one always-on gradient text — a narrow cyan→blue→periwinkle
      slice, not the full nacre range. Solid pearl-white fallback for any
      browser that doesn't support clipping a background to text.
