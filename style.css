@@ -143,25 +143,10 @@ button { font-family: inherit; }
   width: 100%;
   height: 100%;
   z-index: 0;
-  opacity: 0.5;
   pointer-events: none;
 }
-/* Full-length trace: nearly invisible, just a hint that a line is there. */
-.hero-wave .trace-base {
-  fill: none;
-  stroke: var(--pearl-white);
-  stroke-opacity: 0.1;
-  stroke-width: 1;
-}
-/* Same path redrawn with a gradient stroke that fades to 0 opacity outside
-   a narrow band (set via each gradient's own stops) — nacre color reads
-   as a highlight riding the crossing, not a fill along the whole curve. */
-.hero-wave .trace-hot {
-  fill: none;
-  stroke-width: 1.3;
-}
 .hero-wave .wave-group {
-  animation: wave-drift 40s ease-in-out infinite;
+  animation: wave-drift 50s ease-in-out infinite;
   transform-origin: center;
 }
 @keyframes wave-drift {
