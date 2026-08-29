@@ -1009,6 +1009,8 @@ Output 규칙:
     bgDeep: "#070C10", // Deep Ink
     pearlWhite: "#E7EAF2", // Cool Pearl White — role names, glyph strokes, myaitype.kr wordmark
     textMuted: "#93A0B0", // cool slate blue-gray, not warm gray
+    summaryText: "#C3CCDA", // Share Card only: brighter than textMuted for the Type summary line's readability at a glance
+    phraseText: "#AAB6C8", // Share Card only: brighter than textMuted for Core Behavior direction phrases
     nacreCyan: "#67C6C8", // Pearl Cyan
     nacreBlue: "#76A8D8", // Shell Blue
     nacrePeriwinkle: "#9B8ACB", // Pearl Periwinkle
@@ -1366,6 +1368,22 @@ Output 규칙:
     return capped;
   }
 
+  // Share card only: the engine's type.summary can run to 2-3 sentences,
+  // which on a compact card either gets cut off mid-sentence (a visible
+  // "…") or repeats what the 6-axis profile below already shows. This is
+  // display-only sentence *selection*, never re-summarization — it picks
+  // the first sentence that already ends with its own terminal
+  // punctuation (".", "!", "?") and returns it verbatim, unedited. If the
+  // summary is itself one long sentence with no earlier terminator (so
+  // there is no shorter "first sentence" to select), the whole thing is
+  // returned unchanged and buildCardSVGv1 shrinks the font instead of
+  // cropping it, so no partial/incomplete-looking sentence is ever shown.
+  function pickCardSummarySentence(text) {
+    if (!text) return "";
+    var sentences = text.match(/[^.!?]+[.!?]+/g);
+    return (sentences && sentences[0] ? sentences[0] : text).trim();
+  }
+
   // Roles shown in the main result: PRIMARY_ROLE first, then
   // SECONDARY_ROLE with MEDIUM/HIGH confidence only (a LOW-confidence
   // secondary role is hidden from the main result — Result UX v2,
@@ -1445,6 +1463,36 @@ Output 규칙:
     return deduped.slice(0, 3).map(function (g) {
       return { text: capSentences(sanitizeUserFacingText(g.text), 2, 100), confidence: g.confidence, axisIds: g.axisIds };
     });
+  }
+
+  // The short phrase shown next to an axis name on the share card's full
+  // 6-axis profile. STABLE shows the actual resolved direction (same
+  // phrase as the on-page axis card). CONDITIONAL and UNRESOLVED never
+  // state a single direction — they reuse the exact same mode labels
+  // already shown on the on-page badge (AXIS_MODE_DISPLAY), rather than
+  // inventing new wording. "아직 판단하기 어려움" for an UNRESOLVED axis is
+  // itself a valid, honest result — it is shown, never hidden.
+  function axisCardPhrase(axis) {
+    if (axis.mode === "STABLE") {
+      var display = AXIS_DISPLAY[axis.axisId] || { directions: {} };
+      return display.directions[axis.direction] || humanizeEnum(axis.direction);
+    }
+    return AXIS_MODE_DISPLAY[axis.mode] || humanizeEnum(axis.mode);
+  }
+
+  // Purely decorative per-axis icon (reuses the existing glyph library —
+  // no new symbols) so the six behavior-profile rows read distinctly at a
+  // glance; this is styling, not a diagnostic judgment about the axis.
+  var AXIS_GLYPH_MAP = {
+    AXIS_01: "context",
+    AXIS_02: "search",
+    AXIS_03: "thought",
+    AXIS_04: "execution",
+    AXIS_05: "creation",
+    AXIS_06: "conversation",
+  };
+  function axisGlyphCategory(axisId) {
+    return AXIS_GLYPH_MAP[axisId] || "default";
   }
 
   // Hero headline when type.label is null (Result UX v2, section 1-2):
@@ -1893,6 +1941,14 @@ Output 규칙:
     );
   }
 
+  // Small vector glyph `<use>` for the Share Card's Core Behaviors rows
+  // (see buildCardSVGv1) — same glyph library as the on-page crest/role
+  // icons, referenced the same way (glyphDefsSrc is embedded into this
+  // SVG's own <defs>).
+  function cardGlyphMarkup(category, x, y, size, color) {
+    return '<use href="#glyph-' + category + '" x="' + x + '" y="' + y + '" width="' + size + '" height="' + size + '" color="' + color + '"/>';
+  }
+
   // Builds a complete, self-contained SVG document string for the share
   // card (glyph defs are copied in from the live page so <use> resolves
   // even though this SVG is rendered outside the document, as an image).
@@ -2010,11 +2066,11 @@ Output 규칙:
     parts.push(textEl(cx, y, "MY AI TYPE", { size: 26, weight: 700, color: COLORS.textMuted, letterSpacing: 8, anchor: "middle" }));
     y += 70;
 
-    var crestSize = 300;
+    var crestSize = 170;
     parts.push('<g transform="translate(' + (cx - crestSize / 2) + "," + y + ')">' +
       buildCrestMarkup({ TYPE: normalized.typeLabel || "diagnostic" }, { size: crestSize, idPrefix: "export-v1", rolesOverride: crestRoles }) +
       "</g>");
-    y += crestSize + 70;
+    y += crestSize + 46;
 
     // Result UX v2, section 14: a null type.label must never make the
     // card read as "no result". The headline becomes the confirmed
@@ -2037,41 +2093,107 @@ Output 규칙:
         anchor: "middle",
       }));
     });
-    y += typeLineHeight * typeFit.lines.length + 34;
+    y += typeLineHeight * typeFit.lines.length + 20;
 
     if (!hasLabel) {
       parts.push(textEl(cx, y, TYPE_PENDING_BADGE, { size: 22, weight: 600, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
-      y += 46;
+      y += 36;
     }
-    y += 16;
+    y += 12;
 
     var left = 120, right = W - 120, areaWidth = right - left;
 
     // The label-present card still gets its own summary/pattern line
     // below the headline; the null-label card's headline already
-    // absorbed that content, so it isn't repeated here.
+    // absorbed that content, so it isn't repeated here. Capped to 2
+    // lines (display truncation of the engine's own summary — no
+    // re-summarizing) to leave room for the full 6-axis behavior profile
+    // below (Share Image Information Density v2).
     if (hasLabel) {
-      var summaryText = normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "";
+      var summaryText = pickCardSummarySentence(normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "");
       if (summaryText) {
-        var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 3, startSize: 30, minSize: 22, fontWeight: 400, fontFamily: CARD_FONT });
-        var summaryLineHeight = summaryFit.fontSize * 1.5;
+        // minSize is intentionally lower than other card text: this is
+        // the fallback for the rare case where the summary is one long
+        // sentence with no earlier terminator to select against (see
+        // pickCardSummarySentence) — shrinking is preferred over ever
+        // showing a mid-sentence "…" cut.
+        var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 2, startSize: 32, minSize: 20, fontWeight: 400, fontFamily: CARD_FONT });
+        var summaryLineHeight = summaryFit.fontSize * 1.45;
         summaryFit.lines.forEach(function (line, i) {
-          parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "middle" }));
+          parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.summaryText, anchor: "middle" }));
         });
-        y += summaryLineHeight * summaryFit.lines.length + 40;
+        y += summaryLineHeight * summaryFit.lines.length + 28;
       }
     }
 
-    parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
-    y += 60;
+    // ---- Behavior profile ("이 ChatGPT의 행동 패턴") ----
+    // All 6 Axis Results, in the engine's own array order — never
+    // selected, ranked, or padded. STABLE, CONDITIONAL, and UNRESOLVED
+    // are all shown (an UNRESOLVED "아직 판단하기 어려움" is itself a valid
+    // result, never hidden). Each row is a single compact line: glyph +
+    // axis name + short direction phrase — no confidence, no raw enum,
+    // no supported_pattern prose. Same content regardless of hasLabel.
+    var cardAxes = normalized.axes || [];
+    var secondary = displayRoles.filter(function (r) { return r.classification === "SECONDARY_ROLE"; })[0] || null;
+    var hasCoreBehaviors = cardAxes.length > 0;
+    var hasRoleSection = !!primary;
 
-    if (primary) {
-      parts.push(textEl(cx, y + 24, "주요 역할", { size: 20, weight: 500, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
-      parts.push(textEl(cx, y + 66, roleDisplayName(primary.roleKey), { size: 32, weight: 600, color: COLORS.pearlWhite, anchor: "middle" }));
+    if (hasCoreBehaviors || hasRoleSection) {
+      parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
+      y += 34;
     }
 
-    parts.push(textEl(cx, H - 92, "당신의 AI는 어떤 타입?", { size: 24, weight: 500, color: COLORS.textMuted, anchor: "middle" }));
-    parts.push(textEl(cx, H - 52, "myaitype.kr", { size: 26, weight: 700, color: COLORS.pearlWhite, anchor: "middle", letterSpacing: 2 }));
+    if (hasCoreBehaviors) {
+      // Second-strongest hierarchy on the card after the Type Label: a
+      // modest section eyebrow above six compact rows, each its own
+      // behavioral "fingerprint" line — name in medium/bold, phrase one
+      // step down in weight and color, scanned top to bottom as a set.
+      parts.push(textEl(left, y, "이 ChatGPT의 행동 패턴", { size: 26, weight: 700, color: COLORS.pearlWhite, anchor: "start" }));
+      y += 38;
+
+      var glyphSize = 28;
+      var nameX = left + glyphSize + 16;
+      var phraseX = nameX + 160;
+      cardAxes.forEach(function (axis) {
+        var display = AXIS_DISPLAY[axis.axisId] || { name: humanizeEnum(axis.axisName) || axis.axisId };
+        parts.push(cardGlyphMarkup(axisGlyphCategory(axis.axisId), left, y - glyphSize * 0.72, glyphSize, COLORS.nacreCyan));
+        parts.push(textEl(nameX, y, display.name, { size: 27, weight: 700, color: COLORS.pearlWhite, anchor: "start" }));
+        var phraseFit = fitText(mctx, axisCardPhrase(axis), { maxWidth: right - phraseX, maxLines: 1, startSize: 23, minSize: 18, fontWeight: 400, fontFamily: CARD_FONT });
+        parts.push(textEl(phraseX, y, phraseFit.lines[0], { size: phraseFit.fontSize, weight: 400, color: COLORS.phraseText, anchor: "start" }));
+        y += 47;
+      });
+      y += 2;
+
+      if (hasRoleSection) {
+        parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
+        y += 32;
+      }
+    }
+
+    // Role rows are compact single lines (label + value on one baseline),
+    // left-aligned like the behavior-profile rows above but without a
+    // glyph, so they read as a lower hierarchy tier of the same list
+    // rather than a separate centered block.
+    if (primary) {
+      parts.push(textEl(left, y, "주요 역할", { size: 20, weight: 500, color: COLORS.textMuted, anchor: "start", letterSpacing: 1 }));
+      parts.push(textEl(left + 150, y, roleDisplayName(primary.roleKey), { size: 30, weight: 700, color: COLORS.pearlWhite, anchor: "start" }));
+      y += 44;
+      if (secondary) {
+        parts.push(textEl(left, y, "함께 확인됨", { size: 18, weight: 500, color: COLORS.textMuted, anchor: "start", letterSpacing: 1 }));
+        parts.push(textEl(left + 150, y, roleDisplayName(secondary.roleKey), { size: 25, weight: 700, color: COLORS.pearlWhite, anchor: "start" }));
+        y += 34;
+      }
+    }
+
+    // Defensive floor: the footer normally sits at a fixed position near
+    // the bottom edge, but if unusually long/dense content (long labels,
+    // the full 6-axis profile + Primary + Secondary role) pushes past
+    // that point, the footer shifts down with the content instead of
+    // overlapping it. Canvas height itself is never resized.
+    var footerY1 = Math.max(H - 92, y + 40);
+    var footerY2 = Math.max(H - 52, y + 80);
+    parts.push(textEl(cx, footerY1, "당신의 AI는 어떤 타입?", { size: 24, weight: 500, color: COLORS.textMuted, anchor: "middle" }));
+    parts.push(textEl(cx, footerY2, "myaitype.kr", { size: 26, weight: 700, color: COLORS.pearlWhite, anchor: "middle", letterSpacing: 2 }));
 
     var glyphDefsSrc = "";
     var glyphDefsEl = document.querySelector("svg.glyph-defs");
