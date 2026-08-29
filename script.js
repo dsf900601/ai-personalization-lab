@@ -1379,24 +1379,71 @@ Output 규칙:
     return primary.concat(secondary);
   }
 
+  // Single source of truth for "the one representative role" (used by
+  // the Hero, the on-page role anchor, the share text, and the share
+  // card — Result UX v2 final polish, section 2). If the engine reports
+  // more than one PRIMARY_ROLE, this always picks the first one in
+  // pickDisplayRoles()'s order; the frontend never re-ranks or scores
+  // roles itself. Everyone downstream calls this instead of independently
+  // filtering, so the "primary role" can never disagree between surfaces.
+  function pickPrimaryRole(displayRoles) {
+    return (displayRoles[0] && displayRoles[0].classification === "PRIMARY_ROLE") ? displayRoles[0] : null;
+  }
+
+  // Loose text-identity check used only to drop literal duplicate
+  // sentences (see pickCoreBehaviors) — not a semantic/NLU comparison,
+  // just whitespace/punctuation-insensitive equality. Never used to
+  // decide what two *different* sentences "mean".
+  function normalizeForDedup(text) {
+    return String(text || "").replace(/\s+/g, "").replace(/[.!?~…·]/g, "");
+  }
+
   // "당신의 ChatGPT는 이렇게 작동해요": derived patterns and STABLE axes
   // that clear MEDIUM/HIGH confidence, capped at 3. Never padded with
   // low-confidence filler just to fill card slots. Text is sanitized and
   // capped to at most 2 sentences so an overly long or observation-styled
   // engine sentence doesn't take over the card (Result UX v2, section 6).
+  //
+  // Candidates are grouped by literal-duplicate text (normalizeForDedup)
+  // rather than just filtered, because a derived_pattern and an axis's
+  // supported_pattern can carry the exact same sentence — the group
+  // keeps whichever text was seen first (derived_patterns are pushed
+  // before axes, so a higher-level synthesis result wins the display
+  // slot over a lower-level axis sentence — final polish, section 3),
+  // but collects *every* axisId in that group. That way, even when the
+  // representative text came from a derived_pattern (axisId null), any
+  // axis whose own sentence was a duplicate still gets flagged so its
+  // own card doesn't repeat that sentence a second time (see
+  // buildAxisCard's suppressNote).
   function pickCoreBehaviors(normalized) {
     var candidates = [];
     normalized.derivedPatterns.forEach(function (p) {
-      if (p.confidence !== "LOW") candidates.push({ text: p.pattern, confidence: p.confidence });
+      if (p.confidence !== "LOW") candidates.push({ text: p.pattern, confidence: p.confidence, axisId: null });
     });
     normalized.axes.forEach(function (a) {
       if (a.mode === "STABLE" && a.confidence !== "LOW" && a.supportedPattern) {
-        candidates.push({ text: a.supportedPattern, confidence: a.confidence });
+        candidates.push({ text: a.supportedPattern, confidence: a.confidence, axisId: a.axisId });
       }
     });
-    candidates.sort(function (a, b) { return confidenceRank(b.confidence) - confidenceRank(a.confidence); });
-    return candidates.slice(0, 3).map(function (c) {
-      return { text: capSentences(sanitizeUserFacingText(c.text), 2, 100), confidence: c.confidence };
+
+    var groupOrder = [];
+    var groups = {};
+    candidates.forEach(function (c) {
+      var key = normalizeForDedup(c.text);
+      if (!key) return;
+      if (!groups[key]) {
+        groups[key] = { text: c.text, confidence: c.confidence, axisIds: [] };
+        groupOrder.push(key);
+      } else if (confidenceRank(c.confidence) > confidenceRank(groups[key].confidence)) {
+        groups[key].confidence = c.confidence;
+      }
+      if (c.axisId) groups[key].axisIds.push(c.axisId);
+    });
+
+    var deduped = groupOrder.map(function (key) { return groups[key]; });
+    deduped.sort(function (a, b) { return confidenceRank(b.confidence) - confidenceRank(a.confidence); });
+    return deduped.slice(0, 3).map(function (g) {
+      return { text: capSentences(sanitizeUserFacingText(g.text), 2, 100), confidence: g.confidence, axisIds: g.axisIds };
     });
   }
 
@@ -1442,12 +1489,13 @@ Output 규칙:
     }
 
     if (primaryRoleUsedAsHeadline && behaviors.length) {
-      behaviors.slice(0, 2).forEach(function (b) {
-        var line = document.createElement("p");
-        line.className = "v1-confirmed-behavior";
-        line.textContent = "확인된 행동 · " + b.text;
-        container.appendChild(line);
-      });
+      // Capped to 1 (not the full 3 shown in "핵심 행동 패턴" below) —
+      // the Hero stays the most compressed surface (final polish,
+      // section 3): headline + at most one confirmed-behavior line.
+      var line = document.createElement("p");
+      line.className = "v1-confirmed-behavior";
+      line.textContent = "확인된 행동 · " + behaviors[0].text;
+      container.appendChild(line);
       return true;
     }
 
@@ -1490,10 +1538,10 @@ Output 규칙:
     while (container.firstChild) container.removeChild(container.firstChild);
     if (!roles.length) return;
 
-    // roles[0] from pickDisplayRoles() is a PRIMARY_ROLE whenever one
-    // exists (primaries are concatenated first) — that one becomes the
-    // anchor block; everything else becomes chips.
-    var anchor = roles[0].classification === "PRIMARY_ROLE" ? roles[0] : null;
+    // Same single source of truth as the Hero/share surfaces
+    // (pickPrimaryRole) — that one becomes the anchor block; everything
+    // else becomes chips.
+    var anchor = pickPrimaryRole(roles);
     var rest = anchor ? roles.slice(1) : roles;
 
     if (anchor) {
@@ -1532,7 +1580,13 @@ Output 규칙:
     }
   }
 
-  function buildAxisCard(axis) {
+  // suppressNote: true when this axis's supportedPattern text was
+  // already promoted into the "핵심 행동 패턴" section above (see
+  // pickCoreBehaviors()'s axisId tagging) — the card still shows its
+  // direction, just not the same sentence a second time (final polish,
+  // section 3: axis cards show "which direction", not a repeat of the
+  // Hero/pattern explanation).
+  function buildAxisCard(axis, suppressNote) {
     var display = AXIS_DISPLAY[axis.axisId] || { name: humanizeEnum(axis.axisName) || axis.axisId, directions: {} };
 
     var card = document.createElement("div");
@@ -1559,17 +1613,17 @@ Output 규칙:
       direction.className = "v1-axis-direction";
       direction.textContent = display.directions[axis.direction] || humanizeEnum(axis.direction);
       card.appendChild(direction);
-      if (axis.supportedPattern) {
+      if (axis.supportedPattern && !suppressNote) {
         var note = document.createElement("p");
         note.className = "v1-axis-note";
-        note.textContent = capSentences(sanitizeUserFacingText(axis.supportedPattern), 2, 90);
+        note.textContent = capSentences(sanitizeUserFacingText(axis.supportedPattern), 1, 90);
         card.appendChild(note);
       }
     } else if (axis.mode === "CONDITIONAL") {
       var cond = document.createElement("p");
       cond.className = "v1-axis-note";
       cond.textContent = axis.conditionSummary
-        ? capSentences(sanitizeUserFacingText(axis.conditionSummary), 2, 90)
+        ? capSentences(sanitizeUserFacingText(axis.conditionSummary), 1, 90)
         : "상황에 따라 다르게 나타나요.";
       card.appendChild(cond);
     } else {
@@ -1669,8 +1723,10 @@ Output 규칙:
     resultLegacyBody.hidden = true;
 
     var displayRoles = pickDisplayRoles(normalized.roles);
-    var primaryRole = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var primaryRole = pickPrimaryRole(displayRoles);
     var behaviors = pickCoreBehaviors(normalized);
+    var promotedAxisIds = {};
+    behaviors.forEach(function (b) { (b.axisIds || []).forEach(function (id) { promotedAxisIds[id] = true; }); });
     var hasLabel = !!normalized.typeLabel;
 
     // ---- Hero (Result UX v2, sections 1-2) ----
@@ -1721,7 +1777,7 @@ Output 규칙:
 
     // ---- ChatGPT 행동 축 ----
     while (v1AxisList.firstChild) v1AxisList.removeChild(v1AxisList.firstChild);
-    normalized.axes.forEach(function (a) { v1AxisList.appendChild(buildAxisCard(a)); });
+    normalized.axes.forEach(function (a) { v1AxisList.appendChild(buildAxisCard(a, !!promotedAxisIds[a.axisId])); });
     v1AxisSection.hidden = normalized.axes.length === 0;
 
     // ---- 반복되는 습관 ----
@@ -1967,7 +2023,7 @@ Output 규칙:
     // caption instead of the big centered headline.
     var hasLabel = !!normalized.typeLabel;
     var behaviors = pickCoreBehaviors(normalized);
-    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var primary = pickPrimaryRole(displayRoles);
     var headlineText = hasLabel ? normalized.typeLabel : buildHeroHeadline(normalized, behaviors, primary);
     var typeFit = fitText(mctx, headlineText, {
       maxWidth: 880, maxLines: hasLabel ? 2 : 3, startSize: hasLabel ? 60 : 40, minSize: hasLabel ? 36 : 26,
@@ -2044,7 +2100,7 @@ Output 규칙:
   // opening "유형: ..." line.
   function buildShareTextV1(normalized) {
     var displayRoles = pickDisplayRoles(normalized.roles);
-    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var primary = pickPrimaryRole(displayRoles);
     var behaviors = pickCoreBehaviors(normalized);
 
     var lines = [];
@@ -2139,6 +2195,123 @@ Output 규칙:
     return lastResult.engine === "1.0" ? buildCardSVGv1(lastResult.normalized) : buildCardSVG(lastResult.fields);
   }
 
+  // ---------- Image save/share: filename + mobile delivery fallback ----------
+  // ASCII-only: confirmed (isolated repro, unrelated to this app's code)
+  // that an <a download> attribute value containing ANY non-ASCII
+  // character makes Chromium silently discard the entire filename —
+  // including the .png extension — and save as a bare, extensionless
+  // "download" instead. Since Type Label is almost always Korean for
+  // this product, keeping it verbatim would drop the file extension on
+  // most results, which is very likely part of why "이미지 저장" has
+  // looked broken on mobile: the file *did* save, just as an unlabeled,
+  // extensionless file the user's gallery/file manager doesn't recognize
+  // as an image. Falling back to the same "result" name already used
+  // for a null Type Label is the safer trade-off — the label is still
+  // visible inside the saved image itself.
+  function sanitizeFilenameSegment(text) {
+    if (!text) return "";
+    return String(text)
+      .replace(/[^A-Za-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .trim()
+      .slice(0, 40);
+  }
+
+  function buildShareFilename() {
+    if (!lastResult) return "my-ai-type-result.png";
+    var label = lastResult.engine === "1.0" ? lastResult.normalized.typeLabel : lastResult.fields.TYPE;
+    var seg = sanitizeFilenameSegment(label);
+    return seg ? "my-ai-type-" + seg + ".png" : "my-ai-type-result.png";
+  }
+
+  // A number of very common Android in-app browsers (KakaoTalk, Naver,
+  // Line, Instagram/Facebook's in-app WebView) and generic Android
+  // WebView embeds ("; wv)" in the UA — Google's own documented signature
+  // for a WebView without Chrome Custom Tabs) silently no-op an
+  // `<a download>` click on a blob: URL — no error, nothing downloads,
+  // no way to detect the failure after the fact. Rather than guess after
+  // a silent failure, these are routed straight to the fallback path.
+  function isRiskyInAppBrowser() {
+    var ua = navigator.userAgent || "";
+    return /KAKAOTALK|NAVER\(|Instagram|FBAN|FBAV|Line\/|; ?wv\)/i.test(ua);
+  }
+
+  // Delivers a generated PNG blob to the user, in priority order:
+  //  1) <a download> — works in ordinary mobile/desktop browsers.
+  //  2) Web Share API file share — lets the user pick "Save Image" from
+  //     the native share sheet; used when (1) is known to be unreliable.
+  //  3) Open the image in a new tab so the user can long-press to save —
+  //     the last-resort path when neither of the above is available.
+  // preOpenedTab (only used on the risky-browser path) is a window
+  // handle opened synchronously inside the click handler, before any
+  // async work — some browsers only allow window.open() without it being
+  // treated as a blocked popup when it's called in the same tick as the
+  // user gesture, which async PNG generation would otherwise break.
+  function deliverImageBlob(blob, filename, isRisky, preOpenedTab) {
+    var url = URL.createObjectURL(blob);
+    var revoked = false;
+    function revokeLater(delay) {
+      setTimeout(function () {
+        if (!revoked) { revoked = true; URL.revokeObjectURL(url); }
+      }, delay);
+    }
+
+    function viaNewTab(message) {
+      if (preOpenedTab && !preOpenedTab.closed) {
+        preOpenedTab.location.href = url;
+      } else {
+        window.open(url, "_blank");
+      }
+      showFeedback(shareFeedback, message, false);
+      revokeLater(60000); // longer-lived: the new tab still needs the URL
+    }
+
+    // On success, closes preOpenedTab (no longer needed); on failure or
+    // cancellation, falls through to viaNewTab, which reuses
+    // preOpenedTab if it's still open. Returns true only once it has
+    // taken over delivery (asynchronously) — false means the caller
+    // should try the next fallback itself.
+    function viaWebShare(fallbackMessage) {
+      if (!(navigator.share && navigator.canShare)) return false;
+      var file;
+      try {
+        file = new File([blob], filename, { type: "image/png" });
+      } catch (err) {
+        return false;
+      }
+      if (!navigator.canShare({ files: [file] })) return false;
+      navigator.share({ files: [file], title: "MY AI TYPE" })
+        .then(function () {
+          if (preOpenedTab && !preOpenedTab.closed) { try { preOpenedTab.close(); } catch (err) { /* ignore */ } }
+          showFeedback(shareFeedback, "공유 시트에서 '이미지 저장'을 선택해주세요.", false);
+          revokeLater(4000);
+        })
+        .catch(function () {
+          viaNewTab(fallbackMessage);
+        });
+      return true;
+    }
+
+    if (isRisky) {
+      if (viaWebShare("이미지 저장이 지원되지 않는 브라우저예요. 이미지를 열어드릴게요.")) return;
+      viaNewTab("이 브라우저에서는 자동 저장이 어려워요. 새 창에서 이미지를 길게 눌러 저장해주세요.");
+      return;
+    }
+
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      revokeLater(4000);
+      showFeedback(shareFeedback, "이미지를 저장했어요.", false);
+    } catch (err) {
+      viaNewTab("이미지 저장이 지원되지 않는 브라우저예요. 이미지를 열어드릴게요.");
+    }
+  }
+
   if (parseBtn) {
     parseBtn.addEventListener("click", function () {
       var raw = resultInput.value;
@@ -2196,40 +2369,42 @@ Output 규칙:
     saveImageBtn.addEventListener("click", function () {
       if (!lastResult) return;
       var originalLabel = saveImageBtn.textContent;
-      saveImageBtn.disabled = true;
-      saveImageBtn.textContent = "생성 중…";
+      var isRisky = isRiskyInAppBrowser();
+      // Opened synchronously, in the same tick as this click handler, so
+      // it isn't blocked as an unsolicited popup once we later navigate
+      // it to the finished image — by then several async steps (font
+      // readiness, SVG->PNG rendering) will have run, well past the
+      // window some browsers give a window.open() call to still count as
+      // user-gesture-initiated.
+      var preOpenedTab = isRisky ? window.open("", "_blank") : null;
 
-      var svgString;
-      try {
-        svgString = buildCurrentCardSVG();
-      } catch (err) {
+      saveImageBtn.disabled = true;
+      saveImageBtn.textContent = "이미지 만드는 중…";
+
+      function restoreButton() {
         saveImageBtn.disabled = false;
         saveImageBtn.textContent = originalLabel;
-        showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
-        return;
       }
 
-      svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT).then(
-        function (blob) {
-          saveImageBtn.disabled = false;
-          saveImageBtn.textContent = originalLabel;
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.href = url;
-          a.download = "my-ai-type.png";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-          showFeedback(shareFeedback, "이미지를 저장했어요.", false);
-          track("result_image_saved");
-        },
-        function () {
-          saveImageBtn.disabled = false;
-          saveImageBtn.textContent = originalLabel;
-          showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
-        }
-      );
+      function fail() {
+        restoreButton();
+        if (preOpenedTab && !preOpenedTab.closed) { try { preOpenedTab.close(); } catch (err) { /* ignore */ } }
+        showFeedback(shareFeedback, "이미지 생성에 실패했어요. 다시 시도해주세요.", true);
+      }
+
+      // Waiting on document.fonts.ready costs nothing when there's
+      // nothing left to load, and guards against the card's text
+      // rendering with a fallback font if that ever changes.
+      var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+      fontsReady.then(function () {
+        return svgStringToPngBlob(buildCurrentCardSVG(), CARD_WIDTH, CARD_HEIGHT);
+      }).then(function (blob) {
+        restoreButton();
+        if (!blob || !blob.size) { fail(); return; }
+        deliverImageBlob(blob, buildShareFilename(), isRisky, preOpenedTab);
+        track("result_image_saved");
+      }).catch(fail);
     });
   }
 
@@ -2270,7 +2445,7 @@ Output 규칙:
         if (svgString) {
           svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT)
             .then(function (blob) {
-              var file = new File([blob], "my-ai-type.png", { type: "image/png" });
+              var file = new File([blob], buildShareFilename(), { type: "image/png" });
               if (navigator.canShare({ files: [file] })) {
                 return navigator.share({ files: [file], text: text, title: "MY AI TYPE" });
               }
