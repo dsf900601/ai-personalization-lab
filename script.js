@@ -486,6 +486,8 @@ Output 규칙:
 
   // Schema 1.0 result DOM (see index.html's #v1Sections) — unused/hidden
   // for legacy [SHARE_RESULT] results.
+  var v1StatusRow = document.getElementById("v1StatusRow");
+  var v1TypePendingPill = document.getElementById("v1TypePendingPill");
   var v1StatusPill = document.getElementById("v1StatusPill");
   var v1TypeSummary = document.getElementById("v1TypeSummary");
   var v1Sections = document.getElementById("v1Sections");
@@ -1155,11 +1157,13 @@ Output 규칙:
   function renderVisualCard(fields) {
     // Reset any Schema 1.0 UI state — the same #resultCard is reused by
     // both engines, so a legacy result must switch it fully back.
+    v1StatusRow.hidden = true;
+    v1TypePendingPill.hidden = true;
     v1StatusPill.hidden = true;
     v1TypeSummary.hidden = true;
     v1Sections.hidden = true;
     resultLegacyBody.hidden = false;
-    resultType.classList.remove("v1-type-null");
+    resultType.classList.remove("v1-headline-plain");
 
     resultCrest.innerHTML = buildCrestMarkup(fields, { size: 160, idPrefix: "onpage" });
     resultType.textContent = fields.TYPE;
@@ -1226,7 +1230,15 @@ Output 규칙:
   // the Schema 1.0 contract's "user-facing terminology" rule. Wording
   // keeps ChatGPT's behavior as the grammatical subject, not the user.
 
+  // Result UX v2 — presentation-only. None of this changes what the
+  // Diagnostic Prompt asks for or how Schema 1.0 is parsed/normalized;
+  // it only changes how an already-normalized result is displayed. See
+  // buildHeroHeadline()/pickDisplayRoles()/pickCoreBehaviors() below for
+  // where the Hero-hierarchy and internal-enum-hiding rules land.
   var TYPE_NULL_FALLBACK_TEXT = "아직 하나의 타입으로 묶기엔 근거가 부족해요";
+  // Short badge used wherever type.label is null (Hero, share card, share
+  // text) — kept to one canonical phrase across all three surfaces.
+  var TYPE_PENDING_BADGE = "TYPE LABEL · 아직 보류";
 
   var ROLE_DISPLAY_MAP = {
     INFORMATION_UNDERSTANDING: "정보 이해",
@@ -1267,9 +1279,17 @@ Output 규칙:
       AI_DECISION_APPLIED: "ChatGPT가 결정까지 적용해요",
     }},
   };
+  // A STABLE axis's badge text now depends on confidence, not a single
+  // static "뚜렷한 경향" label — the badge is the one place confidence
+  // was implicitly visible before, so it should actually say something
+  // (result UX v2, section 4) rather than hide the distinction entirely.
+  var AXIS_STABLE_CONFIDENCE_DISPLAY = {
+    LOW: "제한적으로 확인됨",
+    MEDIUM: "확인된 패턴",
+    HIGH: "반복 확인된 패턴",
+  };
   var AXIS_MODE_DISPLAY = {
-    STABLE: "뚜렷한 경향",
-    CONDITIONAL: "상황에 따라 달라짐",
+    CONDITIONAL: "상황에 따라 달라져요",
     UNRESOLVED: "아직 판단하기 어려움",
   };
   var STATUS_DISPLAY = {
@@ -1286,6 +1306,17 @@ Output 규칙:
   };
   var CERTAINTY_DISPLAY = { LIMITED: "제한적", MODERATE: "중간 정도", STRONG: "강함" };
 
+  // unknown_reason is an internal enum (Diagnostic Prompt section 7) —
+  // never shown raw in the main axis card. Kept mapped here so the main
+  // UI can state *why* an axis is UNRESOLVED in plain language instead of
+  // silently omitting the reason.
+  var UNKNOWN_REASON_DISPLAY = {
+    INSUFFICIENT_EVIDENCE: "아직 판단할 근거가 충분하지 않아요",
+    INSUFFICIENT_OPPORTUNITY: "이 행동을 판단할 만한 상황이 충분히 나타나지 않았어요",
+    UNEXPLAINED_CONTRADICTION: "서로 다른 행동이 확인됐지만 아직 전환 조건을 설명하기 어려워요",
+    ACCESS_LIMITATION: "확인할 수 있는 대화 범위가 제한되어 있어요",
+  };
+
   function humanizeEnum(key) {
     return key ? String(key).toLowerCase().replace(/_/g, " ") : "";
   }
@@ -1294,30 +1325,189 @@ Output 규칙:
   }
   function confidenceRank(c) { return CONFIDENCE_VALUES.indexOf(c); }
 
+  // Best-effort cleanup for free text the engine authored (type.summary,
+  // derived_patterns[].pattern, axes[].supported_pattern/condition_summary)
+  // in case a stray internal token (English jargon, a raw enum word)
+  // leaked into otherwise natural-language Korean prose. This never
+  // changes the diagnostic *meaning* of the text — it only swaps a small,
+  // fixed set of known internal tokens for their user-facing phrasing
+  // (Result UX v2, section 12). It is not a substitute for the Diagnostic
+  // Prompt asking for clean output in the first place.
+  var INTERNAL_JARGON_REPLACEMENTS = [
+    [/\bEvidence\b/g, "확인된 대화"],
+    [/\bINSUFFICIENT_EVIDENCE\b/g, UNKNOWN_REASON_DISPLAY.INSUFFICIENT_EVIDENCE],
+    [/\bINSUFFICIENT_OPPORTUNITY\b/g, UNKNOWN_REASON_DISPLAY.INSUFFICIENT_OPPORTUNITY],
+    [/\bUNEXPLAINED_CONTRADICTION\b/g, UNKNOWN_REASON_DISPLAY.UNEXPLAINED_CONTRADICTION],
+    [/\bACCESS_LIMITATION\b/g, UNKNOWN_REASON_DISPLAY.ACCESS_LIMITATION],
+    [/\bSTABLE\b/g, "뚜렷한 경향"],
+    [/\bCONDITIONAL\b/g, "상황에 따라 달라지는 경향"],
+    [/\bUNRESOLVED\b/g, "아직 판단하기 어려운 상태"],
+    [/\bHIGH\b/g, "반복적으로 확인된 수준"],
+    [/\bMEDIUM\b/g, "어느 정도 확인된 수준"],
+    [/\bLOW\b/g, "제한적인 수준"],
+  ];
+  function sanitizeUserFacingText(text) {
+    if (!text) return text;
+    var out = text;
+    INTERNAL_JARGON_REPLACEMENTS.forEach(function (pair) { out = out.replace(pair[0], pair[1]); });
+    return out.replace(/\s{2,}/g, " ").trim();
+  }
+
+  // Caps engine-authored free text to at most maxSentences sentences and
+  // maxChars characters, so a very long or observation-styled sentence
+  // never dominates a compact card. Splits on '.', '!', '?' where
+  // present; text with no terminator is treated as one sentence and
+  // still gets the character cap.
+  function capSentences(text, maxSentences, maxChars) {
+    if (!text) return "";
+    var sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+    var capped = sentences.slice(0, maxSentences).join("").trim();
+    if (capped.length > maxChars) capped = capped.slice(0, maxChars - 1).trim() + "…";
+    return capped;
+  }
+
   // Roles shown in the main result: PRIMARY_ROLE first, then
-  // SECONDARY_ROLE; NOT_ESTABLISHED is never listed in the main result
-  // (spec section "Roles" display priority).
+  // SECONDARY_ROLE with MEDIUM/HIGH confidence only (a LOW-confidence
+  // secondary role is hidden from the main result — Result UX v2,
+  // section 7). NOT_ESTABLISHED is never listed. Secondary is capped at
+  // 2 so the role area doesn't read as "does everything".
   function pickDisplayRoles(roles) {
     var primary = roles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; });
-    var secondary = roles.filter(function (r) { return r.classification === "SECONDARY_ROLE"; });
+    var secondary = roles
+      .filter(function (r) { return r.classification === "SECONDARY_ROLE" && r.confidence !== "LOW"; })
+      .slice(0, 2);
     return primary.concat(secondary);
+  }
+
+  // Single source of truth for "the one representative role" (used by
+  // the Hero, the on-page role anchor, the share text, and the share
+  // card — Result UX v2 final polish, section 2). If the engine reports
+  // more than one PRIMARY_ROLE, this always picks the first one in
+  // pickDisplayRoles()'s order; the frontend never re-ranks or scores
+  // roles itself. Everyone downstream calls this instead of independently
+  // filtering, so the "primary role" can never disagree between surfaces.
+  function pickPrimaryRole(displayRoles) {
+    return (displayRoles[0] && displayRoles[0].classification === "PRIMARY_ROLE") ? displayRoles[0] : null;
+  }
+
+  // Loose text-identity check used only to drop literal duplicate
+  // sentences (see pickCoreBehaviors) — not a semantic/NLU comparison,
+  // just whitespace/punctuation-insensitive equality. Never used to
+  // decide what two *different* sentences "mean".
+  function normalizeForDedup(text) {
+    return String(text || "").replace(/\s+/g, "").replace(/[.!?~…·]/g, "");
   }
 
   // "당신의 ChatGPT는 이렇게 작동해요": derived patterns and STABLE axes
   // that clear MEDIUM/HIGH confidence, capped at 3. Never padded with
-  // low-confidence filler just to fill card slots.
+  // low-confidence filler just to fill card slots. Text is sanitized and
+  // capped to at most 2 sentences so an overly long or observation-styled
+  // engine sentence doesn't take over the card (Result UX v2, section 6).
+  //
+  // Candidates are grouped by literal-duplicate text (normalizeForDedup)
+  // rather than just filtered, because a derived_pattern and an axis's
+  // supported_pattern can carry the exact same sentence — the group
+  // keeps whichever text was seen first (derived_patterns are pushed
+  // before axes, so a higher-level synthesis result wins the display
+  // slot over a lower-level axis sentence — final polish, section 3),
+  // but collects *every* axisId in that group. That way, even when the
+  // representative text came from a derived_pattern (axisId null), any
+  // axis whose own sentence was a duplicate still gets flagged so its
+  // own card doesn't repeat that sentence a second time (see
+  // buildAxisCard's suppressNote).
   function pickCoreBehaviors(normalized) {
     var candidates = [];
     normalized.derivedPatterns.forEach(function (p) {
-      if (p.confidence !== "LOW") candidates.push({ text: p.pattern, confidence: p.confidence });
+      if (p.confidence !== "LOW") candidates.push({ text: p.pattern, confidence: p.confidence, axisId: null });
     });
     normalized.axes.forEach(function (a) {
       if (a.mode === "STABLE" && a.confidence !== "LOW" && a.supportedPattern) {
-        candidates.push({ text: a.supportedPattern, confidence: a.confidence });
+        candidates.push({ text: a.supportedPattern, confidence: a.confidence, axisId: a.axisId });
       }
     });
-    candidates.sort(function (a, b) { return confidenceRank(b.confidence) - confidenceRank(a.confidence); });
-    return candidates.slice(0, 3);
+
+    var groupOrder = [];
+    var groups = {};
+    candidates.forEach(function (c) {
+      var key = normalizeForDedup(c.text);
+      if (!key) return;
+      if (!groups[key]) {
+        groups[key] = { text: c.text, confidence: c.confidence, axisIds: [] };
+        groupOrder.push(key);
+      } else if (confidenceRank(c.confidence) > confidenceRank(groups[key].confidence)) {
+        groups[key].confidence = c.confidence;
+      }
+      if (c.axisId) groups[key].axisIds.push(c.axisId);
+    });
+
+    var deduped = groupOrder.map(function (key) { return groups[key]; });
+    deduped.sort(function (a, b) { return confidenceRank(b.confidence) - confidenceRank(a.confidence); });
+    return deduped.slice(0, 3).map(function (g) {
+      return { text: capSentences(sanitizeUserFacingText(g.text), 2, 100), confidence: g.confidence, axisIds: g.axisIds };
+    });
+  }
+
+  // Hero headline when type.label is null (Result UX v2, section 1-2):
+  // the confirmed behavior becomes the star, not the "no type yet"
+  // notice — but it must never fuse two independent Supported Results
+  // (e.g. Primary Role + an unrelated Axis behavior) into one
+  // synthesized sentence. Doing so would imply a Role -> Behavior
+  // relationship the engine never established, recreating the
+  // "independent evidence combined after the fact" problem Derived
+  // Pattern synthesis exists to prevent. Each branch here uses exactly
+  // one independent result; anything else worth showing goes in the
+  // supporting area below, kept visually separate — see
+  // renderTypeSupportingArea().
+  function buildHeroHeadline(normalized, behaviors, primaryRole) {
+    if (normalized.typeLabel) return normalized.typeLabel;
+    if (primaryRole) return "ChatGPT가 " + roleDisplayName(primaryRole.roleKey) + " 역할을 주로 맡고 있어요.";
+    if (behaviors[0]) return behaviors[0].text;
+    return "아직 뚜렷하게 확인된 행동 패턴이 많지 않아요.";
+  }
+
+  // Content for the small text under the Hero headline.
+  // - Type Label present: the engine's own type.summary (unchanged).
+  // - Type Label null, headline used Primary Role alone: confirmed
+  //   behaviors are listed as independent "확인된 행동 · ..." lines —
+  //   never woven into one sentence with the role, so no new Role <->
+  //   Behavior relationship is implied.
+  // - Type Label null, no Primary Role (headline already used a
+  //   behavior, or nothing at all): falls back to type.summary if the
+  //   engine wrote one, sanitized; otherwise nothing to show.
+  // Returns true if it rendered anything (caller uses this to decide
+  // whether to unhide the container).
+  function renderTypeSupportingArea(container, normalized, primaryRoleUsedAsHeadline, behaviors) {
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    if (normalized.typeLabel) {
+      if (!normalized.typeSummary) return false;
+      var p = document.createElement("p");
+      p.className = "v1-type-summary-text";
+      p.textContent = sanitizeUserFacingText(normalized.typeSummary);
+      container.appendChild(p);
+      return true;
+    }
+
+    if (primaryRoleUsedAsHeadline && behaviors.length) {
+      // Capped to 1 (not the full 3 shown in "핵심 행동 패턴" below) —
+      // the Hero stays the most compressed surface (final polish,
+      // section 3): headline + at most one confirmed-behavior line.
+      var line = document.createElement("p");
+      line.className = "v1-confirmed-behavior";
+      line.textContent = "확인된 행동 · " + behaviors[0].text;
+      container.appendChild(line);
+      return true;
+    }
+
+    if (normalized.typeSummary) {
+      var p2 = document.createElement("p");
+      p2.className = "v1-type-summary-text";
+      p2.textContent = sanitizeUserFacingText(normalized.typeSummary);
+      container.appendChild(p2);
+      return true;
+    }
+
+    return false;
   }
 
   function buildGlyphSvg(glyphCategory, className) {
@@ -1330,26 +1520,73 @@ Output 규칙:
     return svg;
   }
 
-  function buildRoleRow(role) {
-    var displayName = roleDisplayName(role.roleKey);
-    var row = document.createElement("div");
-    row.className = "v1-role-row";
-    row.appendChild(buildGlyphSvg(mapRoleToGlyph(displayName), "v1-role-glyph"));
-
+  // Primary Role is the anchor (bigger, standalone); everything else
+  // (extra roles beyond the first, MEDIUM/HIGH secondaries) renders as
+  // small chips underneath so the role area doesn't read as "does
+  // everything" (Result UX v2, sections 7-8).
+  function buildRoleChip(role) {
+    var chip = document.createElement("span");
+    chip.className = "v1-role-chip";
+    chip.appendChild(buildGlyphSvg(mapRoleToGlyph(roleDisplayName(role.roleKey)), "v1-role-chip-glyph"));
     var nameSpan = document.createElement("span");
-    nameSpan.className = "v1-role-name";
-    nameSpan.textContent = displayName;
-    row.appendChild(nameSpan);
-
-    var badge = document.createElement("span");
-    badge.className = "v1-role-badge" + (role.classification === "PRIMARY_ROLE" ? " v1-role-badge-primary" : "");
-    badge.textContent = ROLE_CLASSIFICATION_DISPLAY[role.classification] || "";
-    row.appendChild(badge);
-
-    return row;
+    nameSpan.textContent = roleDisplayName(role.roleKey);
+    chip.appendChild(nameSpan);
+    return chip;
   }
 
-  function buildAxisCard(axis) {
+  function renderRoleSection(container, roles) {
+    while (container.firstChild) container.removeChild(container.firstChild);
+    if (!roles.length) return;
+
+    // Same single source of truth as the Hero/share surfaces
+    // (pickPrimaryRole) — that one becomes the anchor block; everything
+    // else becomes chips.
+    var anchor = pickPrimaryRole(roles);
+    var rest = anchor ? roles.slice(1) : roles;
+
+    if (anchor) {
+      var block = document.createElement("div");
+      block.className = "v1-role-primary";
+      block.appendChild(buildGlyphSvg(mapRoleToGlyph(roleDisplayName(anchor.roleKey)), "v1-role-primary-glyph"));
+      var textWrap = document.createElement("div");
+      textWrap.className = "v1-role-primary-text";
+      var name = document.createElement("span");
+      name.className = "v1-role-primary-name";
+      name.textContent = roleDisplayName(anchor.roleKey);
+      var caption = document.createElement("span");
+      caption.className = "v1-role-primary-caption";
+      caption.textContent = ROLE_CLASSIFICATION_DISPLAY.PRIMARY_ROLE;
+      textWrap.appendChild(name);
+      textWrap.appendChild(caption);
+      block.appendChild(textWrap);
+      container.appendChild(block);
+    }
+
+    if (rest.length) {
+      var group = document.createElement("div");
+      group.className = "v1-role-secondary-group";
+      var label = document.createElement("span");
+      label.className = "v1-role-secondary-label";
+      // Almost always true secondaries; only says something more neutral
+      // in the rare case the engine reported more than one PRIMARY_ROLE.
+      var allSecondary = rest.every(function (r) { return r.classification === "SECONDARY_ROLE"; });
+      label.textContent = allSecondary ? ROLE_CLASSIFICATION_DISPLAY.SECONDARY_ROLE : "함께 확인된 역할";
+      group.appendChild(label);
+      var chips = document.createElement("div");
+      chips.className = "v1-role-secondary-chips";
+      rest.forEach(function (r) { chips.appendChild(buildRoleChip(r)); });
+      group.appendChild(chips);
+      container.appendChild(group);
+    }
+  }
+
+  // suppressNote: true when this axis's supportedPattern text was
+  // already promoted into the "핵심 행동 패턴" section above (see
+  // pickCoreBehaviors()'s axisId tagging) — the card still shows its
+  // direction, just not the same sentence a second time (final polish,
+  // section 3: axis cards show "which direction", not a repeat of the
+  // Hero/pattern explanation).
+  function buildAxisCard(axis, suppressNote) {
     var display = AXIS_DISPLAY[axis.axisId] || { name: humanizeEnum(axis.axisName) || axis.axisId, directions: {} };
 
     var card = document.createElement("div");
@@ -1362,7 +1599,11 @@ Output 규칙:
     name.textContent = display.name;
     var mode = document.createElement("span");
     mode.className = "v1-axis-mode v1-axis-mode-" + axis.mode.toLowerCase();
-    mode.textContent = AXIS_MODE_DISPLAY[axis.mode];
+    // STABLE's badge text depends on confidence (LOW/MEDIUM/HIGH), never
+    // shown as the raw enum word itself — see AXIS_STABLE_CONFIDENCE_DISPLAY.
+    mode.textContent = axis.mode === "STABLE"
+      ? (AXIS_STABLE_CONFIDENCE_DISPLAY[axis.confidence] || AXIS_STABLE_CONFIDENCE_DISPLAY.MEDIUM)
+      : AXIS_MODE_DISPLAY[axis.mode];
     head.appendChild(name);
     head.appendChild(mode);
     card.appendChild(head);
@@ -1372,21 +1613,28 @@ Output 규칙:
       direction.className = "v1-axis-direction";
       direction.textContent = display.directions[axis.direction] || humanizeEnum(axis.direction);
       card.appendChild(direction);
-      if (axis.supportedPattern) {
+      if (axis.supportedPattern && !suppressNote) {
         var note = document.createElement("p");
         note.className = "v1-axis-note";
-        note.textContent = axis.supportedPattern;
+        note.textContent = capSentences(sanitizeUserFacingText(axis.supportedPattern), 1, 90);
         card.appendChild(note);
       }
     } else if (axis.mode === "CONDITIONAL") {
       var cond = document.createElement("p");
       cond.className = "v1-axis-note";
-      cond.textContent = axis.conditionSummary || "상황에 따라 다르게 나타나요.";
+      cond.textContent = axis.conditionSummary
+        ? capSentences(sanitizeUserFacingText(axis.conditionSummary), 1, 90)
+        : "상황에 따라 다르게 나타나요.";
       card.appendChild(cond);
     } else {
+      // unknown_reason is an internal enum (INSUFFICIENT_EVIDENCE, ...) —
+      // always mapped to plain language here, never appended raw.
       var unresolved = document.createElement("p");
       unresolved.className = "v1-axis-note";
-      unresolved.textContent = "아직 한 방향으로 판단하기 어려워요" + (axis.unknownReason ? " — " + axis.unknownReason : ".");
+      var reasonText = axis.unknownReason
+        ? (UNKNOWN_REASON_DISPLAY[axis.unknownReason] || sanitizeUserFacingText(humanizeEnum(axis.unknownReason)))
+        : "";
+      unresolved.textContent = "아직 한 방향으로 판단하기 어려워요" + (reasonText ? " — " + reasonText : ".");
       card.appendChild(unresolved);
     }
 
@@ -1450,21 +1698,58 @@ Output 규칙:
       });
       v1DetailBody.appendChild(ul2);
     }
+
+    // Raw engine state, for anyone who opens this accordion — internal
+    // enums are fine to show here (Result UX v2, section 11), just never
+    // in the main result above.
+    addSection("판단 상태 (원본)", normalized.axes.map(function (a) {
+      var display = AXIS_DISPLAY[a.axisId];
+      var axisLabel = display ? display.name : (humanizeEnum(a.axisName) || a.axisId);
+      return axisLabel + ": " + a.mode + " · " + a.confidence;
+    }));
+
+    if (!normalized.typeLabel) {
+      var h4c = document.createElement("h4");
+      h4c.textContent = "Type 판단";
+      var pc = document.createElement("p");
+      pc.style.margin = "0";
+      pc.textContent = TYPE_NULL_FALLBACK_TEXT;
+      v1DetailBody.appendChild(h4c);
+      v1DetailBody.appendChild(pc);
+    }
   }
 
   function renderV1Result(normalized) {
     resultLegacyBody.hidden = true;
 
+    var displayRoles = pickDisplayRoles(normalized.roles);
+    var primaryRole = pickPrimaryRole(displayRoles);
+    var behaviors = pickCoreBehaviors(normalized);
+    var promotedAxisIds = {};
+    behaviors.forEach(function (b) { (b.axisIds || []).forEach(function (id) { promotedAxisIds[id] = true; }); });
+    var hasLabel = !!normalized.typeLabel;
+
+    // ---- Hero (Result UX v2, sections 1-2) ----
+    // Type Label present: headline = the label (unchanged gradient
+    // treatment). Type Label null: the confirmed behavior becomes the
+    // headline instead of the "no type yet" notice — that notice moves
+    // to a small pill below, alongside the diagnostic status pill.
+    resultType.textContent = buildHeroHeadline(normalized, behaviors, primaryRole);
+    resultType.classList.toggle("v1-headline-plain", !hasLabel);
+
+    // primaryRoleUsedAsHeadline mirrors buildHeroHeadline()'s own
+    // branch order exactly, so the supporting area never repeats
+    // whatever the headline already said.
+    var primaryRoleUsedAsHeadline = !hasLabel && !!primaryRole;
+    var hasSupporting = renderTypeSupportingArea(v1TypeSummary, normalized, primaryRoleUsedAsHeadline, behaviors);
+    v1TypeSummary.hidden = !hasSupporting;
+
+    v1StatusRow.hidden = false;
+    v1TypePendingPill.hidden = hasLabel;
+    v1TypePendingPill.textContent = hasLabel ? "" : TYPE_PENDING_BADGE;
     v1StatusPill.hidden = false;
     v1StatusPill.textContent = STATUS_DISPLAY[normalized.status] || STATUS_DISPLAY.INSUFFICIENT;
 
-    resultType.textContent = normalized.typeLabel || TYPE_NULL_FALLBACK_TEXT;
-    resultType.classList.toggle("v1-type-null", !normalized.typeLabel);
-
-    v1TypeSummary.hidden = !normalized.typeSummary;
-    v1TypeSummary.textContent = normalized.typeSummary || "";
-
-    var displayRoles = pickDisplayRoles(normalized.roles);
     var crestRoles = (displayRoles.length ? displayRoles : normalized.roles).slice(0, 3).map(function (r) {
       return { name: roleDisplayName(r.roleKey), percent: null };
     });
@@ -1476,7 +1761,7 @@ Output 규칙:
       { size: 160, idPrefix: "onpage-v1", rolesOverride: crestRoles }
     );
 
-    var behaviors = pickCoreBehaviors(normalized);
+    // ---- 핵심 행동 패턴 ----
     while (v1BehaviorList.firstChild) v1BehaviorList.removeChild(v1BehaviorList.firstChild);
     behaviors.forEach(function (b) {
       var li = document.createElement("li");
@@ -1486,23 +1771,26 @@ Output 규칙:
     });
     v1BehaviorSection.hidden = behaviors.length === 0;
 
-    while (v1RoleList.firstChild) v1RoleList.removeChild(v1RoleList.firstChild);
-    displayRoles.forEach(function (r) { v1RoleList.appendChild(buildRoleRow(r)); });
+    // ---- 주요 역할 ----
+    renderRoleSection(v1RoleList, displayRoles);
     v1RoleSection.hidden = displayRoles.length === 0;
 
+    // ---- ChatGPT 행동 축 ----
     while (v1AxisList.firstChild) v1AxisList.removeChild(v1AxisList.firstChild);
-    normalized.axes.forEach(function (a) { v1AxisList.appendChild(buildAxisCard(a)); });
+    normalized.axes.forEach(function (a) { v1AxisList.appendChild(buildAxisCard(a, !!promotedAxisIds[a.axisId])); });
     v1AxisSection.hidden = normalized.axes.length === 0;
 
+    // ---- 반복되는 습관 ----
     while (v1HabitList.firstChild) v1HabitList.removeChild(v1HabitList.firstChild);
     normalized.personalHabits.forEach(function (h) {
       var li = document.createElement("li");
       li.className = "v1-habit-item";
-      li.textContent = h.habit;
+      li.textContent = sanitizeUserFacingText(h.habit);
       v1HabitList.appendChild(li);
     });
     v1HabitSection.hidden = normalized.personalHabits.length === 0;
 
+    // ---- 왜 이렇게 나왔나요? ----
     renderV1Detail(normalized);
     v1Sections.hidden = false;
   }
@@ -1728,38 +2016,55 @@ Output 규칙:
       "</g>");
     y += crestSize + 70;
 
+    // Result UX v2, section 14: a null type.label must never make the
+    // card read as "no result". The headline becomes the confirmed
+    // behavior summary (same source as the on-page Hero — never a
+    // fabricated type name), and the null state is demoted to a small
+    // caption instead of the big centered headline.
     var hasLabel = !!normalized.typeLabel;
-    var typeText = hasLabel ? normalized.typeLabel : TYPE_NULL_FALLBACK_TEXT;
-    var typeFit = fitText(mctx, typeText, {
-      maxWidth: 880, maxLines: 2, startSize: hasLabel ? 60 : 42, minSize: hasLabel ? 36 : 28,
+    var behaviors = pickCoreBehaviors(normalized);
+    var primary = pickPrimaryRole(displayRoles);
+    var headlineText = hasLabel ? normalized.typeLabel : buildHeroHeadline(normalized, behaviors, primary);
+    var typeFit = fitText(mctx, headlineText, {
+      maxWidth: 880, maxLines: hasLabel ? 2 : 3, startSize: hasLabel ? 60 : 40, minSize: hasLabel ? 36 : 26,
       fontWeight: 700, fontFamily: CARD_FONT,
     });
     var typeLineHeight = typeFit.fontSize * 1.3;
     typeFit.lines.forEach(function (line, i) {
       parts.push(textEl(cx, y + typeLineHeight * (i + 0.8), line, {
         size: typeFit.fontSize, weight: 700,
-        color: hasLabel ? "url(#typeGrad)" : COLORS.textMuted,
+        color: hasLabel ? "url(#typeGrad)" : COLORS.pearlWhite,
         anchor: "middle",
       }));
     });
-    y += typeLineHeight * typeFit.lines.length + 50;
+    y += typeLineHeight * typeFit.lines.length + 34;
+
+    if (!hasLabel) {
+      parts.push(textEl(cx, y, TYPE_PENDING_BADGE, { size: 22, weight: 600, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
+      y += 46;
+    }
+    y += 16;
 
     var left = 120, right = W - 120, areaWidth = right - left;
 
-    var summaryText = normalized.typeSummary || (pickCoreBehaviors(normalized)[0] && pickCoreBehaviors(normalized)[0].text) || "";
-    if (summaryText) {
-      var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 3, startSize: 30, minSize: 22, fontWeight: 400, fontFamily: CARD_FONT });
-      var summaryLineHeight = summaryFit.fontSize * 1.5;
-      summaryFit.lines.forEach(function (line, i) {
-        parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "middle" }));
-      });
-      y += summaryLineHeight * summaryFit.lines.length + 40;
+    // The label-present card still gets its own summary/pattern line
+    // below the headline; the null-label card's headline already
+    // absorbed that content, so it isn't repeated here.
+    if (hasLabel) {
+      var summaryText = normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "";
+      if (summaryText) {
+        var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 3, startSize: 30, minSize: 22, fontWeight: 400, fontFamily: CARD_FONT });
+        var summaryLineHeight = summaryFit.fontSize * 1.5;
+        summaryFit.lines.forEach(function (line, i) {
+          parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "middle" }));
+        });
+        y += summaryLineHeight * summaryFit.lines.length + 40;
+      }
     }
 
     parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
     y += 60;
 
-    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
     if (primary) {
       parts.push(textEl(cx, y + 24, "주요 역할", { size: 20, weight: 500, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
       parts.push(textEl(cx, y + 66, roleDisplayName(primary.roleKey), { size: 32, weight: 600, color: COLORS.pearlWhite, anchor: "middle" }));
@@ -1789,22 +2094,38 @@ Output 규칙:
   // Schema 1.0 plain-text share output — same minimal-info scope as
   // buildCardSVGv1 (type, one summary line, primary role), plus the
   // optional accuracy/opinion fields shared with the legacy path.
+  //
+  // Result UX v2, section 13: when type.label is null, the confirmed
+  // behavior leads and the null state is a small trailing line, not the
+  // opening "유형: ..." line.
   function buildShareTextV1(normalized) {
+    var displayRoles = pickDisplayRoles(normalized.roles);
+    var primary = pickPrimaryRole(displayRoles);
+    var behaviors = pickCoreBehaviors(normalized);
+
     var lines = [];
-    lines.push("🧪 MY AI TYPE — ChatGPT 행동 진단");
+    lines.push("🧪 MY AI TYPE");
     lines.push("");
-    lines.push("유형: " + (normalized.typeLabel || TYPE_NULL_FALLBACK_TEXT));
 
-    var summaryText = normalized.typeSummary || (pickCoreBehaviors(normalized)[0] && pickCoreBehaviors(normalized)[0].text) || "";
-    if (summaryText) {
+    if (normalized.typeLabel) {
+      lines.push("유형: " + normalized.typeLabel);
+      var summaryText = normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "";
+      if (summaryText) {
+        lines.push("");
+        lines.push(summaryText);
+      }
+      if (primary) {
+        lines.push("");
+        lines.push("주요 역할: " + roleDisplayName(primary.roleKey));
+      }
+    } else {
+      lines.push("내 ChatGPT의 현재 패턴");
       lines.push("");
-      lines.push(summaryText);
-    }
-
-    var primary = pickDisplayRoles(normalized.roles).filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
-    if (primary) {
+      if (primary) lines.push(roleDisplayName(primary.roleKey) + " 역할이 가장 분명하게 나타났어요.");
+      if (behaviors[0]) lines.push(behaviors[0].text);
+      if (behaviors[1]) lines.push(behaviors[1].text);
       lines.push("");
-      lines.push("주요 역할: " + roleDisplayName(primary.roleKey));
+      lines.push(TYPE_PENDING_BADGE);
     }
 
     if (accuracySelect && accuracySelect.value) {
@@ -1874,6 +2195,123 @@ Output 규칙:
     return lastResult.engine === "1.0" ? buildCardSVGv1(lastResult.normalized) : buildCardSVG(lastResult.fields);
   }
 
+  // ---------- Image save/share: filename + mobile delivery fallback ----------
+  // ASCII-only: confirmed (isolated repro, unrelated to this app's code)
+  // that an <a download> attribute value containing ANY non-ASCII
+  // character makes Chromium silently discard the entire filename —
+  // including the .png extension — and save as a bare, extensionless
+  // "download" instead. Since Type Label is almost always Korean for
+  // this product, keeping it verbatim would drop the file extension on
+  // most results, which is very likely part of why "이미지 저장" has
+  // looked broken on mobile: the file *did* save, just as an unlabeled,
+  // extensionless file the user's gallery/file manager doesn't recognize
+  // as an image. Falling back to the same "result" name already used
+  // for a null Type Label is the safer trade-off — the label is still
+  // visible inside the saved image itself.
+  function sanitizeFilenameSegment(text) {
+    if (!text) return "";
+    return String(text)
+      .replace(/[^A-Za-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .trim()
+      .slice(0, 40);
+  }
+
+  function buildShareFilename() {
+    if (!lastResult) return "my-ai-type-result.png";
+    var label = lastResult.engine === "1.0" ? lastResult.normalized.typeLabel : lastResult.fields.TYPE;
+    var seg = sanitizeFilenameSegment(label);
+    return seg ? "my-ai-type-" + seg + ".png" : "my-ai-type-result.png";
+  }
+
+  // A number of very common Android in-app browsers (KakaoTalk, Naver,
+  // Line, Instagram/Facebook's in-app WebView) and generic Android
+  // WebView embeds ("; wv)" in the UA — Google's own documented signature
+  // for a WebView without Chrome Custom Tabs) silently no-op an
+  // `<a download>` click on a blob: URL — no error, nothing downloads,
+  // no way to detect the failure after the fact. Rather than guess after
+  // a silent failure, these are routed straight to the fallback path.
+  function isRiskyInAppBrowser() {
+    var ua = navigator.userAgent || "";
+    return /KAKAOTALK|NAVER\(|Instagram|FBAN|FBAV|Line\/|; ?wv\)/i.test(ua);
+  }
+
+  // Delivers a generated PNG blob to the user, in priority order:
+  //  1) <a download> — works in ordinary mobile/desktop browsers.
+  //  2) Web Share API file share — lets the user pick "Save Image" from
+  //     the native share sheet; used when (1) is known to be unreliable.
+  //  3) Open the image in a new tab so the user can long-press to save —
+  //     the last-resort path when neither of the above is available.
+  // preOpenedTab (only used on the risky-browser path) is a window
+  // handle opened synchronously inside the click handler, before any
+  // async work — some browsers only allow window.open() without it being
+  // treated as a blocked popup when it's called in the same tick as the
+  // user gesture, which async PNG generation would otherwise break.
+  function deliverImageBlob(blob, filename, isRisky, preOpenedTab) {
+    var url = URL.createObjectURL(blob);
+    var revoked = false;
+    function revokeLater(delay) {
+      setTimeout(function () {
+        if (!revoked) { revoked = true; URL.revokeObjectURL(url); }
+      }, delay);
+    }
+
+    function viaNewTab(message) {
+      if (preOpenedTab && !preOpenedTab.closed) {
+        preOpenedTab.location.href = url;
+      } else {
+        window.open(url, "_blank");
+      }
+      showFeedback(shareFeedback, message, false);
+      revokeLater(60000); // longer-lived: the new tab still needs the URL
+    }
+
+    // On success, closes preOpenedTab (no longer needed); on failure or
+    // cancellation, falls through to viaNewTab, which reuses
+    // preOpenedTab if it's still open. Returns true only once it has
+    // taken over delivery (asynchronously) — false means the caller
+    // should try the next fallback itself.
+    function viaWebShare(fallbackMessage) {
+      if (!(navigator.share && navigator.canShare)) return false;
+      var file;
+      try {
+        file = new File([blob], filename, { type: "image/png" });
+      } catch (err) {
+        return false;
+      }
+      if (!navigator.canShare({ files: [file] })) return false;
+      navigator.share({ files: [file], title: "MY AI TYPE" })
+        .then(function () {
+          if (preOpenedTab && !preOpenedTab.closed) { try { preOpenedTab.close(); } catch (err) { /* ignore */ } }
+          showFeedback(shareFeedback, "공유 시트에서 '이미지 저장'을 선택해주세요.", false);
+          revokeLater(4000);
+        })
+        .catch(function () {
+          viaNewTab(fallbackMessage);
+        });
+      return true;
+    }
+
+    if (isRisky) {
+      if (viaWebShare("이미지 저장이 지원되지 않는 브라우저예요. 이미지를 열어드릴게요.")) return;
+      viaNewTab("이 브라우저에서는 자동 저장이 어려워요. 새 창에서 이미지를 길게 눌러 저장해주세요.");
+      return;
+    }
+
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      revokeLater(4000);
+      showFeedback(shareFeedback, "이미지를 저장했어요.", false);
+    } catch (err) {
+      viaNewTab("이미지 저장이 지원되지 않는 브라우저예요. 이미지를 열어드릴게요.");
+    }
+  }
+
   if (parseBtn) {
     parseBtn.addEventListener("click", function () {
       var raw = resultInput.value;
@@ -1931,40 +2369,42 @@ Output 규칙:
     saveImageBtn.addEventListener("click", function () {
       if (!lastResult) return;
       var originalLabel = saveImageBtn.textContent;
-      saveImageBtn.disabled = true;
-      saveImageBtn.textContent = "생성 중…";
+      var isRisky = isRiskyInAppBrowser();
+      // Opened synchronously, in the same tick as this click handler, so
+      // it isn't blocked as an unsolicited popup once we later navigate
+      // it to the finished image — by then several async steps (font
+      // readiness, SVG->PNG rendering) will have run, well past the
+      // window some browsers give a window.open() call to still count as
+      // user-gesture-initiated.
+      var preOpenedTab = isRisky ? window.open("", "_blank") : null;
 
-      var svgString;
-      try {
-        svgString = buildCurrentCardSVG();
-      } catch (err) {
+      saveImageBtn.disabled = true;
+      saveImageBtn.textContent = "이미지 만드는 중…";
+
+      function restoreButton() {
         saveImageBtn.disabled = false;
         saveImageBtn.textContent = originalLabel;
-        showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
-        return;
       }
 
-      svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT).then(
-        function (blob) {
-          saveImageBtn.disabled = false;
-          saveImageBtn.textContent = originalLabel;
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.href = url;
-          a.download = "my-ai-type.png";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-          showFeedback(shareFeedback, "이미지를 저장했어요.", false);
-          track("result_image_saved");
-        },
-        function () {
-          saveImageBtn.disabled = false;
-          saveImageBtn.textContent = originalLabel;
-          showFeedback(shareFeedback, "이미지를 생성하지 못했어요. 다시 시도해주세요.", true);
-        }
-      );
+      function fail() {
+        restoreButton();
+        if (preOpenedTab && !preOpenedTab.closed) { try { preOpenedTab.close(); } catch (err) { /* ignore */ } }
+        showFeedback(shareFeedback, "이미지 생성에 실패했어요. 다시 시도해주세요.", true);
+      }
+
+      // Waiting on document.fonts.ready costs nothing when there's
+      // nothing left to load, and guards against the card's text
+      // rendering with a fallback font if that ever changes.
+      var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+      fontsReady.then(function () {
+        return svgStringToPngBlob(buildCurrentCardSVG(), CARD_WIDTH, CARD_HEIGHT);
+      }).then(function (blob) {
+        restoreButton();
+        if (!blob || !blob.size) { fail(); return; }
+        deliverImageBlob(blob, buildShareFilename(), isRisky, preOpenedTab);
+        track("result_image_saved");
+      }).catch(fail);
     });
   }
 
@@ -2005,7 +2445,7 @@ Output 규칙:
         if (svgString) {
           svgStringToPngBlob(svgString, CARD_WIDTH, CARD_HEIGHT)
             .then(function (blob) {
-              var file = new File([blob], "my-ai-type.png", { type: "image/png" });
+              var file = new File([blob], buildShareFilename(), { type: "image/png" });
               if (navigator.canShare({ files: [file] })) {
                 return navigator.share({ files: [file], text: text, title: "MY AI TYPE" });
               }

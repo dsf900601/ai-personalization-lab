@@ -545,16 +545,17 @@ section h2 {
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .result-card-type { color: transparent; }
 }
-/* Schema 1.0, type.label === null: the headline must not look like a
-   found type (no gradient), while still using the same slot/size as a
-   real one. Higher specificity than the rules above, so it wins in both
-   directions regardless of source order. */
-.result-card-type.v1-type-null {
+/* Result UX v2: when type.label is null, the headline is a confirmed
+   behavior summary, not a "no type" notice — it stays the Hero's star,
+   so it keeps full size/weight, just without the gradient reserved for
+   an actual coined type name (plain bright pearl instead). Higher
+   specificity than the rules above, so it wins in both directions
+   regardless of source order. */
+.result-card-type.v1-headline-plain {
   background: none;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  color: var(--text-muted);
-  font-weight: 600;
+  color: var(--pearl-white);
 }
 .result-card-roles {
   display: flex;
@@ -626,6 +627,16 @@ section h2 {
    than redesigned: same dark surfaces, thin lines, single nacre accent
    per element, no score bars/percentages (Schema 1.0 roles and axes
    carry no measured proportion to show). */
+/* Small status row, always below the headline (Result UX v2, section 2)
+   — diagnostic status, plus a "type still pending" pill only when
+   type.label is null. Never the Hero's biggest text. */
+.v1-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 18px;
+}
 .v1-status-pill {
   display: inline-block;
   font-size: 0.7rem;
@@ -636,27 +647,42 @@ section h2 {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 12px;
-  margin-bottom: 14px;
+  margin: 0;
 }
 .v1-type-summary {
+  margin: -8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v1-type-summary-text {
   font-size: 0.86rem;
   color: var(--text-muted);
   line-height: 1.55;
-  margin: -8px 0 18px;
+  margin: 0;
+}
+/* Independent confirmed-behavior lines shown under a role-only headline
+   (Result UX v2 follow-up) — deliberately separate lines, never one
+   sentence fused with the headline's Primary Role. */
+.v1-confirmed-behavior {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
 }
 
 #v1Sections {
   max-width: 340px;
-  margin: 28px auto 0;
+  margin: 26px auto 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
 }
 .v1-section-title {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 
 .v1-behavior-list,
@@ -664,53 +690,65 @@ section h2 {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .v1-behavior-item,
 .v1-habit-item {
-  font-size: 0.86rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
-  line-height: 1.55;
+  line-height: 1.5;
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
   border-left: 2px solid var(--nacre-cyan);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 9px 12px;
 }
 
+/* Role area (Result UX v2, sections 7-8): Primary Role is the visual
+   anchor — bigger glyph, bigger name, its own caption. Everything else
+   (MEDIUM/HIGH secondaries, capped at 2) renders as small compact chips
+   underneath a single shared "보조 역할" label, so the section never
+   reads as "does everything". */
 .v1-role-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
-.v1-role-row {
+.v1-role-primary {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
+  gap: 12px;
 }
-.v1-role-glyph { width: 16px; height: 16px; flex: none; color: var(--pearl-silver); }
-.v1-role-name { flex: 1; color: var(--text-primary); }
-.v1-role-badge {
-  font-size: 0.68rem;
-  color: var(--text-muted);
+.v1-role-primary-glyph { width: 26px; height: 26px; flex: none; color: var(--nacre-cyan); }
+.v1-role-primary-text { display: flex; flex-direction: column; gap: 2px; }
+.v1-role-primary-name { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+.v1-role-primary-caption { font-size: 0.72rem; color: var(--text-muted); }
+
+.v1-role-secondary-group { display: flex; flex-direction: column; gap: 8px; }
+.v1-role-secondary-label { font-size: 0.72rem; color: var(--text-muted); }
+.v1-role-secondary-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.v1-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-primary);
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 2px 9px;
-  flex: none;
+  padding: 5px 12px 5px 8px;
 }
-.v1-role-badge-primary { color: var(--nacre-cyan); border-color: rgba(103, 198, 200, 0.4); }
+.v1-role-chip-glyph { width: 14px; height: 14px; flex: none; color: var(--pearl-silver); }
 
 .v1-axis-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .v1-axis-card {
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   text-align: left;
 }
 .v1-axis-head {
@@ -718,14 +756,14 @@ section h2 {
   justify-content: space-between;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
-.v1-axis-name { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
-.v1-axis-mode { font-size: 0.68rem; color: var(--text-muted); flex: none; }
+.v1-axis-name { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.v1-axis-mode { font-size: 0.66rem; color: var(--text-muted); flex: none; }
 .v1-axis-mode-stable { color: var(--nacre-cyan); }
 .v1-axis-mode-conditional { color: var(--nacre-periwinkle); }
-.v1-axis-direction { font-size: 0.85rem; color: var(--text-primary); margin: 0 0 4px; }
-.v1-axis-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.v1-axis-direction { font-size: 0.82rem; color: var(--text-primary); margin: 0 0 3px; line-height: 1.4; }
+.v1-axis-note { font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; margin: 0; }
 
 .v1-detail {
   border: 1px solid var(--line);
