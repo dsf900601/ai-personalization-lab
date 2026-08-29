@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MY AI TYPE — 내 ChatGPT는 어떤 AI가 됐을까?</title>
+<meta name="description" content="당신과 오래 대화한 ChatGPT는 어떤 유형의 AI로 개인화되어 있을까요? 진단 프롬프트를 복사해서 직접 확인해보세요. 무료, 로그인 없음, 대화 수집 없음.">
+<meta property="og:title" content="내 ChatGPT는 나랑 대화하면서 어떤 AI가 됐을까?">
+<meta property="og:description" content="당신의 성격 테스트가 아닙니다. 당신과 오래 대화한 ChatGPT의 행동 유형을 진단해보는 실험입니다.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<!-- Anonymous funnel analytics (Umami Cloud). Loaded only on the
+     production domain and only for non-automated browsers — see
+     script.js's "Analytics" section for exactly what is (and isn't)
+     sent. No cookies, no persistent identifier are set by this snippet. -->
+<script>
+(function () {
+  "use strict";
+  if (location.hostname !== "myaitype.kr") return;
+  if (navigator.webdriver === true) return;
+  var s = document.createElement("script");
+  s.async = true;
+  s.src = "https://cloud.umami.is/script.js";
+  // TODO: replace with the real Umami Cloud website ID for myaitype.kr
+  // after creating the site in the Umami dashboard.
+  s.setAttribute("data-website-id", "REPLACE_WITH_UMAMI_WEBSITE_ID");
+  document.head.appendChild(s);
+})();
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+<!-- Shared abstract glyph library. Each glyph shares the same stroke
+     weight / geometry language; role glyphs are referenced via <use>
+     both in the on-page result card and the exported PNG. -->
+<svg class="glyph-defs" aria-hidden="true">
+  <defs>
+    <!-- Thought: two nodes joined by a curved connector -->
+    <symbol id="glyph-thought" viewBox="0 0 24 24">
+      <path class="glyph" d="M8.5,15.8 Q12,9.5 15.8,8.3"/>
+      <circle class="glyph" cx="7.2" cy="17" r="2.1"/>
+      <circle class="glyph" cx="16.8" cy="7" r="2.1"/>
+    </symbol>
+    <!-- Context / knowledge: layered thin strata -->
+    <symbol id="glyph-context" viewBox="0 0 24 24">
+      <rect class="glyph" x="5" y="5.5" width="13" height="3.4" rx="1.7"/>
+      <rect class="glyph" x="6.5" y="10.3" width="13" height="3.4" rx="1.7"/>
+      <rect class="glyph" x="5" y="15.1" width="13" height="3.4" rx="1.7"/>
+    </symbol>
+    <!-- Execution: a directed flow reaching a point -->
+    <symbol id="glyph-execution" viewBox="0 0 24 24">
+      <path class="glyph" d="M4,18 C9,18 9,10 20,6"/>
+      <path class="glyph" d="M15.5,6 L20,6 L20,10.5"/>
+    </symbol>
+    <!-- Creation: one trace branching into several -->
+    <symbol id="glyph-creation" viewBox="0 0 24 24">
+      <path class="glyph" d="M12,20 L12,12.5"/>
+      <path class="glyph" d="M12,12.5 L6,5"/>
+      <path class="glyph" d="M12,12.5 L12,4"/>
+      <path class="glyph" d="M12,12.5 L18,5"/>
+    </symbol>
+    <!-- Search: a wave with a located point -->
+    <symbol id="glyph-search" viewBox="0 0 24 24">
+      <path class="glyph" d="M3,15 Q7.5,8.5 12,15 T21,15"/>
+      <circle class="glyph-dot" cx="14.4" cy="12.2" r="1.5"/>
+    </symbol>
+    <!-- Conversation / emotional: two curves facing each other -->
+    <symbol id="glyph-conversation" viewBox="0 0 24 24">
+      <path class="glyph" d="M9,4.5 C4.5,8 4.5,16 9,19.5"/>
+      <path class="glyph" d="M15,4.5 C19.5,8 19.5,16 15,19.5"/>
+    </symbol>
+    <!-- Research / verification: two traces crossing at one point -->
+    <symbol id="glyph-research" viewBox="0 0 24 24">
+      <path class="glyph" d="M4,6 L12,12 L20,6"/>
+      <path class="glyph" d="M4,18 L12,12 L20,18"/>
+      <circle class="glyph-dot" cx="12" cy="12" r="1.3"/>
+    </symbol>
+    <!-- Fallback: a simple point within a ring -->
+    <symbol id="glyph-default" viewBox="0 0 24 24">
+      <circle class="glyph" cx="12" cy="12" r="6.5"/>
+      <circle class="glyph-dot" cx="12" cy="12" r="1.7"/>
+    </symbol>
+    <!-- Faceted Pearl: the brand's core mark, used at the crest's center,
+         the hero, and the header lockup. A small angular gem — one plain
+         facet, one carrying the nacre gradient — rather than a wave, so
+         it reads as the mineral itself (자개/najeon), not another curve.
+         Chosen over four other candidates for holding its silhouette
+         cleanly from 22px (header) up to the crest. -->
+    <symbol id="glyph-thought-wave" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="thought-wave-grad" x1="12" y1="4" x2="19" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#67C6C8"/>
+          <stop offset="55%" stop-color="#76A8D8"/>
+          <stop offset="100%" stop-color="#9B8ACB"/>
+        </linearGradient>
+      </defs>
+      <path d="M12,4 L5,9 L9,19 L12,14 Z" fill="currentColor" opacity="0.92"/>
+      <path d="M12,4 L19,9 L15,20 L12,14 Z" fill="url(#thought-wave-grad)" opacity="0.92"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="site-header">
+  <div class="wrap">
+    <!-- A quiet brand signature, not a navbar: the same thought-wave
+         glyph used at the crest's center, paired with the wordmark.
+         No links, no menu — deliberately smaller than the Hero. -->
+    <span class="brand-lockup">
+      <svg class="brand-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-thought-wave"/></svg>
+      <span class="brand-block">
+        <span class="brand">MY AI TYPE</span>
+        <span class="brand-sub">AI Personalization Lab</span>
+      </span>
+    </span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero">
+    <!-- Digital Najeon background art. Four reusable pieces:
+         NajeonRibbon  — one thick organic band, bottom-left in / off the
+                         right edge, carrying the full irregular nacre
+                         chain (cyan→icy blue→lavender→pale violet→
+                         pearl pink→white) plus a second translucent
+                         sheen layer and a clipped grain filter, so it
+                         reads as a lacquer surface, not a flat gradient.
+         NajeonCluster — 4 curves top-right: 3 dark blue-gray at
+                         different weights, 1 carrying the nacre gradient.
+                         Not every line glows — that's the point.
+         PearlFragment — small irregular shards + one 4-point star,
+                         varied size, mostly tiny.
+         thin dark curves — a third, barely-visible layer for depth.
+         Headline/CTA column stays clean; everything lives at the edges. -->
+    <svg class="hero-wave hero-wave--desktop" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="najeonClusterGrad" gradientUnits="userSpaceOnUse" x1="600" y1="0" x2="1040" y2="150">
+          <stop offset="0%" stop-color="var(--nacre-cyan)" stop-opacity="0"/>
+          <stop offset="25%" stop-color="var(--nacre-cyan)" stop-opacity="0.7"/>
+          <stop offset="50%" stop-color="var(--pearl-white)" stop-opacity="0.65"/>
+          <stop offset="72%" stop-color="var(--nacre-lavender)" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="var(--nacre-periwinkle)" stop-opacity="0"/>
+        </linearGradient>
+        <!-- Narrow highlight riding curveA only, ~15% of its length —
+             the rest of both background curves stay plain dark. -->
+        <linearGradient id="najeonCurveHot" gradientUnits="userSpaceOnUse" x1="380" y1="0" x2="560" y2="0">
+          <stop offset="0%" stop-color="var(--nacre-lavender)" stop-opacity="0"/>
+          <stop offset="45%" stop-color="var(--nacre-lavender)" stop-opacity="0.4"/>
+          <stop offset="70%" stop-color="var(--pearl-white)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--pearl-white)" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="najeonFragA" cx="0.3" cy="0.3" r="0.8">
+          <stop offset="0%" stop-color="var(--pearl-white)"/>
+          <stop offset="45%" stop-color="var(--nacre-cyan)"/>
+          <stop offset="100%" stop-color="var(--nacre-periwinkle)"/>
+        </radialGradient>
+        <radialGradient id="najeonFragB" cx="0.35" cy="0.3" r="0.85">
+          <stop offset="0%" stop-color="var(--pearl-white)"/>
+          <stop offset="40%" stop-color="var(--nacre-lavender)"/>
+          <stop offset="100%" stop-color="var(--nacre-pink)"/>
+        </radialGradient>
+        <!-- One shared, static grain filter (not animated) — cheap to
+             paint once, reused as a clipped overlay on the ribbon only. -->
+        <filter id="najeonGrain" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" result="noise"/>
+          <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0"/>
+        </filter>
+        <!-- Soft blur for the ribbon's color patches — irregular blobs,
+             not a clean gradient sweep. -->
+        <filter id="najeonPatchBlur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <clipPath id="najeonRibbonClip">
+          <use href="#najeonRibbon"/>
+        </clipPath>
+      </defs>
+
+      <g class="wave-group">
+        <!-- thin dark curves: far apart, converge near the headline,
+             diverge again. Only curveA carries a narrow highlight. -->
+        <g fill="none">
+          <path d="M -80,70 C -42,77 78,107 150,110 C 222,113 295,83 350,90 C 405,98 435,147 480,155 C 525,163 567,153 620,140 C 673,128 728,93 800,80 C 872,67 1008,63 1050,60" stroke="#25384a" stroke-width="0.6" opacity="0.55"/>
+          <path d="M -80,290 C -33,283 123,267 200,250 C 277,233 333,204 380,190 C 427,176 443,165 480,165 C 517,165 547,173 600,190 C 653,208 725,248 800,270 C 875,292 1008,312 1050,320" stroke="#25384a" stroke-width="0.6" opacity="0.5"/>
+          <path d="M -80,70 C -42,77 78,107 150,110 C 222,113 295,83 350,90 C 405,98 435,147 480,155 C 525,163 567,153 620,140 C 673,128 728,93 800,80 C 872,67 1008,63 1050,60" stroke="url(#najeonCurveHot)" stroke-width="0.9"/>
+        </g>
+
+        <!-- NajeonRibbon: a vein, not a mountain — enters thin bottom-left,
+             thickens to a short belly, thins abruptly to a hairline, exits
+             off the bottom edge. Base fill is one muted nacre tone; the
+             actual color comes from the translucent patches below, not a
+             gradient sweep across the shape. -->
+        <path id="najeonRibbon" fill="var(--nacre-periwinkle)" opacity="0.4"
+          d="M -150,462 C -147,462 -138,463 -129,464 C -121,465 -109,466 -99,467 C -88,468 -77,469 -67,469 C -57,470 -48,470 -40,470 C -32,470 -27,469 -21,468 C -15,467 -10,466 -5,465 C -1,463 3,462 8,461 C 12,460 16,459 20,458 C 25,458 29,459 33,459 C 38,460 42,460 45,461 C 49,462 53,462 57,463 C 61,464 64,465 68,466 C 72,467 76,468 80,469 C 84,470 87,472 92,473 C 96,475 101,476 105,477 C 110,478 116,480 121,479 C 125,479 131,476 135,474 C 139,472 143,470 147,467 C 151,465 154,462 158,461 C 162,459 166,457 170,456 C 174,456 178,457 183,458 C 187,459 192,460 197,462 C 202,463 207,465 212,465 C 218,466 224,467 230,467 C 236,467 243,465 250,464 C 258,463 265,461 273,459 C 280,457 288,455 296,454 C 304,453 312,452 320,451 C 328,451 336,452 344,452 C 352,453 361,453 369,454 C 378,455 386,457 395,458 C 403,460 411,461 420,463 C 428,465 436,467 445,470 C 453,472 461,475 470,477 C 478,480 486,483 495,486 C 503,490 511,493 519,496 C 528,500 537,504 547,509 C 556,513 567,519 576,523 C 585,528 594,533 601,537 C 609,541 616,545 619,546 L 621,543 C 618,541 611,537 603,533 C 596,529 587,524 577,520 C 568,515 558,510 548,505 C 539,501 530,496 521,493 C 512,489 504,486 496,483 C 488,479 479,476 471,474 C 462,471 454,468 446,466 C 437,464 429,461 421,459 C 412,458 404,456 395,454 C 387,453 378,451 370,450 C 361,449 353,449 344,448 C 336,448 328,447 320,447 C 312,448 304,449 296,450 C 288,451 280,453 272,455 C 264,456 257,458 250,459 C 243,461 236,462 230,462 C 224,462 219,461 213,459 C 208,458 204,456 199,454 C 194,453 190,450 185,449 C 180,448 175,447 170,447 C 165,446 159,446 154,446 C 149,446 144,447 139,448 C 135,448 131,449 127,449 C 124,449 122,448 119,447 C 116,447 115,447 112,447 C 109,446 105,445 101,444 C 97,443 92,441 88,440 C 83,439 78,437 73,437 C 68,437 64,438 59,438 C 55,439 50,440 46,441 C 42,442 37,443 33,444 C 28,446 24,447 19,449 C 15,450 10,451 5,452 C 1,453 -3,455 -8,457 C -12,458 -17,460 -22,461 C -27,463 -33,464 -40,464 C -48,464 -57,464 -66,464 C -76,463 -88,462 -98,461 C -109,460 -120,459 -129,459 C -137,458 -146,457 -150,457 Z"
+        />
+        <g clip-path="url(#najeonRibbonClip)">
+          <ellipse cx="45" cy="465" rx="32" ry="13" fill="var(--nacre-cyan)" opacity="0.6" filter="url(#najeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="90" cy="450" rx="26" ry="10" fill="var(--pearl-white)" opacity="0.55" filter="url(#najeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="125" cy="472" rx="24" ry="9" fill="var(--nacre-pink)" opacity="0.45" filter="url(#najeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="10" cy="462" rx="20" ry="8" fill="var(--nacre-blue)" opacity="0.5" filter="url(#najeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="150" cy="452" rx="16" ry="7" fill="var(--nacre-lavender)" opacity="0.45" filter="url(#najeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <rect x="-30" y="425" width="230" height="70" filter="url(#najeonGrain)" opacity="0.45" style="mix-blend-mode:overlay"/>
+        </g>
+
+        <!-- NajeonCluster: 4 curves, 3 dark + 1 lit (unchanged) -->
+        <g fill="none">
+          <path d="M 600,60 C 615,70 662,114 690,120 C 718,126 740,90 770,95 C 800,100 830,144 870,150 C 910,156 987,133 1010,130" stroke="#2b3f52" stroke-width="0.7" opacity="0.6"/>
+          <path d="M 680,-30 C 692,-20 725,24 750,30 C 775,36 800,-1 830,5 C 860,11 892,59 930,65 C 968,71 1038,44 1060,40" stroke="#324a5f" stroke-width="0.9" opacity="0.65"/>
+          <path d="M 620,-20 C 633,-7 673,47 700,55 C 727,63 750,24 780,30 C 810,36 840,85 880,90 C 920,95 997,65 1020,60" stroke="url(#najeonClusterGrad)" stroke-width="1.6" opacity="0.9"/>
+          <path d="M 650,10 C 663,22 703,73 730,80 C 757,88 782,49 810,55 C 838,61 862,109 900,115 C 938,121 1017,94 1040,90" stroke="#25384a" stroke-width="0.5" opacity="0.45"/>
+        </g>
+
+        <!-- PearlFragment: irregular 4-6pt polygons, tiny/small/medium mix, 6 total -->
+        <path fill="url(#najeonFragA)" opacity="0.85" d="M 90,168 L 99,153 L 116,157 L 118,172 L 106,183 L 94,180 Z"/>
+        <path fill="url(#najeonFragB)" opacity="0.7" d="M 858,478 L 866,470 L 878,473 L 879,484 L 869,491 L 861,487 Z"/>
+        <path fill="url(#najeonFragA)" opacity="0.5" d="M 778,138 L 785,132 L 792,137 L 787,145 Z"/>
+        <path fill="url(#najeonFragB)" opacity="0.55" d="M 128,338 L 134,332 L 141,336 L 138,344 L 131,343 Z"/>
+        <path fill="var(--pearl-white)" opacity="0.8" d="M 953,173 L 958,164 L 962,174 L 971,178 L 962,182 L 958,191 L 954,182 L 945,178 Z"/>
+        <path fill="url(#najeonFragA)" opacity="0.4" d="M 690,470 L 695,465 L 700,469 L 696,475 Z"/>
+      </g>
+    </svg>
+
+    <!-- Mobile gets its own composition, not a crop of the desktop one —
+         viewBox matches the real mobile hero's own pixel size (390x500,
+         measured) so preserveAspectRatio barely has to crop, and every
+         element is placed against the actual measured gaps: ~95px above
+         the eyebrow pill, and ~48px below the CTA before the hero's own
+         edge. Same four pieces (ribbon/cluster/curves/fragments), same
+         palette and technique, just laid out for a narrow, tall canvas
+         instead of a wide one. -->
+    <svg class="hero-wave hero-wave--mobile" viewBox="0 0 390 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="mNajeonClusterGrad" gradientUnits="userSpaceOnUse" x1="250" y1="0" x2="415" y2="60">
+          <stop offset="0%" stop-color="var(--nacre-cyan)" stop-opacity="0"/>
+          <stop offset="30%" stop-color="var(--nacre-cyan)" stop-opacity="0.7"/>
+          <stop offset="60%" stop-color="var(--pearl-white)" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="var(--nacre-periwinkle)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="mNajeonCurveHot" gradientUnits="userSpaceOnUse" x1="140" y1="0" x2="260" y2="0">
+          <stop offset="0%" stop-color="var(--nacre-lavender)" stop-opacity="0"/>
+          <stop offset="45%" stop-color="var(--nacre-lavender)" stop-opacity="0.4"/>
+          <stop offset="70%" stop-color="var(--pearl-white)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--pearl-white)" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="mNajeonFragA" cx="0.3" cy="0.3" r="0.8">
+          <stop offset="0%" stop-color="var(--pearl-white)"/>
+          <stop offset="45%" stop-color="var(--nacre-cyan)"/>
+          <stop offset="100%" stop-color="var(--nacre-periwinkle)"/>
+        </radialGradient>
+        <radialGradient id="mNajeonFragB" cx="0.35" cy="0.3" r="0.85">
+          <stop offset="0%" stop-color="var(--pearl-white)"/>
+          <stop offset="40%" stop-color="var(--nacre-lavender)"/>
+          <stop offset="100%" stop-color="var(--nacre-pink)"/>
+        </radialGradient>
+        <filter id="mNajeonGrain" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="4" result="noise"/>
+          <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0"/>
+        </filter>
+        <filter id="mNajeonPatchBlur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3"/>
+        </filter>
+        <clipPath id="mNajeonRibbonClip">
+          <use href="#mNajeonRibbon"/>
+        </clipPath>
+      </defs>
+
+      <g class="wave-group">
+        <!-- background curves: far apart -> converge behind the eyebrow -> diverge -->
+        <g fill="none">
+          <path d="M -20,20 C 60,10 140,50 200,35 C 260,20 340,60 410,45" stroke="#25384a" stroke-width="0.6" opacity="0.55"/>
+          <path d="M -20,70 C 80,85 160,50 220,65 C 300,85 360,55 410,75" stroke="#25384a" stroke-width="0.55" opacity="0.5"/>
+          <path d="M -20,20 C 60,10 140,50 200,35 C 260,20 340,60 410,45" stroke="url(#mNajeonCurveHot)" stroke-width="0.8"/>
+        </g>
+
+        <!-- top-right cluster: 3 curves, 2 dark + 1 lit -->
+        <g fill="none">
+          <path d="M 260,-10 C 290,10 320,40 350,35 C 380,30 400,55 415,50" stroke="#2b3f52" stroke-width="0.6" opacity="0.6"/>
+          <path d="M 280,20 C 305,35 330,55 355,50 C 380,45 395,65 415,70" stroke="#25384a" stroke-width="0.45" opacity="0.45"/>
+          <path d="M 250,5 C 280,25 310,50 340,45 C 370,40 390,60 410,55" stroke="url(#mNajeonClusterGrad)" stroke-width="1.2" opacity="0.85"/>
+        </g>
+
+        <!-- NajeonRibbon: small vein grazing the hero's bottom edge -->
+        <path id="mNajeonRibbon" fill="var(--nacre-periwinkle)" opacity="0.4"
+          d="M -40,471 C -39,471 -35,472 -31,472 C -27,473 -22,473 -18,474 C -13,474 -8,475 -3,475 C 2,476 6,476 10,475 C 14,475 18,475 21,474 C 25,473 29,472 32,471 C 36,470 39,469 42,468 C 45,468 48,467 50,467 C 53,467 55,467 58,468 C 60,468 62,469 64,470 C 67,470 69,471 72,472 C 74,472 77,473 80,473 C 83,473 86,472 88,471 C 91,470 93,468 95,467 C 97,466 99,465 102,464 C 104,464 107,463 110,463 C 113,463 117,463 121,464 C 124,465 129,466 133,467 C 137,468 142,469 146,470 C 151,471 155,472 160,473 C 164,474 169,474 174,475 C 178,476 183,476 188,477 C 193,478 198,478 203,479 C 209,480 214,480 220,481 C 226,482 231,483 237,484 C 244,485 250,486 256,487 C 263,488 269,489 277,490 C 284,491 291,492 300,493 C 309,494 319,496 330,497 C 341,499 354,500 365,502 C 376,503 388,505 397,506 C 407,507 416,509 420,509 L 420,506 C 417,506 407,504 398,503 C 389,502 377,500 365,499 C 354,497 341,496 330,494 C 319,493 309,491 300,490 C 291,489 284,488 277,487 C 270,486 263,485 257,484 C 250,483 244,482 238,481 C 232,480 226,479 220,478 C 215,477 209,477 204,476 C 198,475 193,475 188,474 C 183,473 179,473 174,472 C 169,472 165,471 160,470 C 156,469 151,468 147,467 C 142,466 138,464 134,463 C 130,462 125,461 121,460 C 117,459 114,458 110,458 C 107,457 103,457 100,457 C 97,457 94,458 92,458 C 89,459 87,459 85,459 C 83,459 81,459 80,459 C 78,459 76,459 74,459 C 72,458 70,458 68,457 C 65,457 62,456 59,455 C 56,455 53,455 49,455 C 46,456 42,457 39,459 C 36,460 33,462 30,464 C 26,465 23,467 20,468 C 17,469 14,471 10,471 C 6,472 2,472 -3,472 C -7,471 -13,471 -17,470 C -22,470 -27,469 -31,469 C -34,469 -38,468 -40,468 Z"
+        />
+        <g clip-path="url(#mNajeonRibbonClip)">
+          <ellipse cx="60" cy="465" rx="14" ry="6" fill="var(--nacre-cyan)" opacity="0.6" filter="url(#mNajeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="85" cy="463" rx="11" ry="5" fill="var(--pearl-white)" opacity="0.55" filter="url(#mNajeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="35" cy="470" rx="9" ry="4" fill="var(--nacre-blue)" opacity="0.5" filter="url(#mNajeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <ellipse cx="100" cy="468" rx="8" ry="4" fill="var(--nacre-lavender)" opacity="0.45" filter="url(#mNajeonPatchBlur)" style="mix-blend-mode:screen"/>
+          <rect x="10" y="450" width="120" height="35" filter="url(#mNajeonGrain)" opacity="0.4" style="mix-blend-mode:overlay"/>
+        </g>
+
+        <!-- PearlFragment: 6, irregular, tiny/small, kept off the text column -->
+        <path fill="url(#mNajeonFragA)" opacity="0.8" d="M 15,26 L 19,20 L 25,22 L 24,29 L 18,32 Z"/>
+        <path fill="url(#mNajeonFragB)" opacity="0.7" d="M 368,18 L 374,12 L 381,15 L 380,23 L 372,25 Z"/>
+        <path fill="var(--pearl-white)" opacity="0.75" d="M 392,58 L 395,52 L 398,58 L 404,60 L 398,63 L 395,69 L 392,63 L 386,60 Z"/>
+        <path fill="url(#mNajeonFragA)" opacity="0.45" d="M 376,186 L 380,181 L 385,185 L 382,191 Z"/>
+        <path fill="url(#mNajeonFragB)" opacity="0.5" d="M 12,330 L 16,325 L 21,328 L 19,335 L 13,334 Z"/>
+        <path fill="url(#mNajeonFragA)" opacity="0.4" d="M 370,483 L 373,479 L 377,482 L 375,487 Z"/>
+      </g>
+    </svg>
+    <div class="wrap">
+      <svg class="hero-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-thought-wave"/></svg>
+      <p class="eyebrow">무료 · 로그인 없음 · 대화 수집 없음</p>
+      <h1>내 ChatGPT는 나랑 대화하면서<br>어떤 AI가 됐을까?</h1>
+      <p class="hero-sub">
+        당신을 분석하는 테스트가 아닙니다.<br>
+        당신과 오래 대화한 ChatGPT가<br class="mobile-only">
+        어떤 AI처럼 행동하고 있는지 살펴봅니다.
+      </p>
+      <a href="#diagnose" id="startObservationBtn" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
+    </div>
+  </section>
+
+  <!-- CONCEPT -->
+  <section class="concept">
+    <div class="wrap">
+      <h2>이게 무슨 테스트인가요?</h2>
+      <p>
+        같은 ChatGPT라도 누구와 오래 대화했느냐에 따라<br>
+        나타나는 행동은 달라질 수 있습니다.
+      </p>
+      <p>
+        검색 도구처럼 쓰든, 비서처럼 쓰든, 아이디어 파트너처럼 쓰든 —<br>
+        그렇게 쌓인 대화에 따라 ChatGPT가 지금 나에게<br class="mobile-only">
+        반응하는 방식도 조금씩 달라져 있습니다.
+      </p>
+      <p>
+        MY AI TYPE은 그렇게 만들어진 지금의 ChatGPT가<br>
+        어떤 행동적 역할을 보이는지 직접 확인해보는 실험입니다.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>이 테스트는 과학적으로 검증된 심리검사가 아닙니다.</strong><br>
+          ChatGPT가 접근 가능한 대화 맥락, 저장된 정보, 사용자 설정 및
+          현재 나타나는 응답 행동을 바탕으로 스스로 분석하게 하는
+          탐색적 진단입니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how">
+    <div class="wrap">
+      <h2>사용 방법</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div>
+            <h3>진단 프롬프트를 복사하세요</h3>
+            <p>아래에 준비된 프롬프트를 그대로 복사합니다.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div>
+            <h3>평소 쓰던 ChatGPT에 붙여넣으세요</h3>
+            <p>가능하면 오래 사용해온 계정·환경에서 실행해야 정확도가 높아집니다.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div>
+            <h3>결과를 확인하고 비교해보세요</h3>
+            <p>내 ChatGPT의 유형을 확인하고, 다른 사람의 결과와 비교해보세요.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- DIAGNOSTIC PROMPT -->
+  <section class="diagnose" id="diagnose">
+    <div class="wrap">
+      <h2>진단 프롬프트</h2>
+      <p class="section-sub">이 텍스트 전체를 복사해서 ChatGPT에 붙여넣으세요.</p>
+
+      <div class="prompt-box">
+        <details class="prompt-details">
+          <summary>프롬프트 전체 보기 / 접기</summary>
+          <pre id="promptText" class="prompt-pre"></pre>
+        </details>
+      </div>
+
+      <button id="copyBtn" class="btn btn-primary btn-large btn-copy" type="button">
+        <span class="copy-icon" aria-hidden="true">⧉</span>
+        프롬프트 복사하기
+      </button>
+      <p id="copyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- EXAMPLE RESULTS -->
+  <section class="examples">
+    <div class="wrap">
+      <h2>이런 결과가 나올 수 있어요</h2>
+      <ul class="example-list">
+        <li>장기맥락형 공동사고 파트너</li>
+        <li>실행관리형 비서</li>
+        <li>탐구형 교사</li>
+        <li>창작협업형 파트너</li>
+        <li>정보검색 중심형</li>
+      </ul>
+      <p class="example-note">
+        유형은 미리 정해진 목록에서 선택되는 것이 아닙니다.<br>
+        ChatGPT가 현재 상호작용 패턴을 바탕으로 직접 이름을 붙입니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- SHARE / FEEDBACK -->
+  <section class="share" id="share">
+    <div class="wrap">
+      <h2>결과 공유하기</h2>
+      <p class="section-sub">
+        ChatGPT가 작성한 진단 답변 전체를 복사해서 아래에 붙여넣으세요.<br>
+        필요한 결과만 브라우저에서 자동으로 찾아 공유 카드로 만들어드립니다.
+      </p>
+
+      <div class="paste-block">
+        <label for="resultInput">ChatGPT 결과 붙여넣기</label>
+        <textarea id="resultInput" rows="10" placeholder="ChatGPT의 답변 전체를 여기에 붙여넣어 주세요."></textarea>
+        <div class="paste-meta">
+          <span id="charCount">0자</span>
+        </div>
+        <p class="privacy-note">
+          붙여넣은 내용은 서버로 전송되거나 저장되지 않습니다.<br>
+          이 브라우저 안에서 공유 카드 생성에 필요한 부분만 읽습니다.
+        </p>
+        <button type="button" id="parseBtn" class="btn btn-primary btn-large">내 결과 카드 만들기</button>
+        <p id="parseStatus" class="parse-status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div id="shareResult" class="share-result" hidden>
+        <div class="result-card" id="resultCard">
+          <p class="result-card-brand">MY AI TYPE</p>
+          <svg id="resultCrest" class="result-card-crest" viewBox="0 0 160 160" aria-hidden="true"></svg>
+          <p class="result-card-type" id="resultType"></p>
+          <div class="result-card-roles" id="resultRoles"></div>
+          <hr class="result-card-divider">
+          <ol class="result-card-traits" id="resultTraits"></ol>
+          <p class="result-card-footer">myaitype.kr</p>
+        </div>
+
+        <!-- Plain-text version, kept for clipboard copy / text share -->
+        <pre id="shareOutput" class="share-output" hidden></pre>
+
+        <div class="image-actions">
+          <button type="button" id="saveImageBtn" class="btn btn-primary">이미지 저장</button>
+          <button type="button" id="shareCopyBtn" class="btn btn-secondary">텍스트 복사하기</button>
+          <button type="button" id="webShareBtn" class="btn btn-secondary" hidden>결과 공유</button>
+        </div>
+        <p id="shareFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+
+        <div class="optional-feedback">
+          <p class="optional-feedback-title">이 결과, 실제 경험과 얼마나 맞았나요? <span>(선택)</span></p>
+          <select id="accuracy">
+            <option value="">선택 안 함</option>
+            <option value="5">5 — 소름 돋게 정확했다</option>
+            <option value="4">4 — 꽤 맞았다</option>
+            <option value="3">3 — 반반이다</option>
+            <option value="2">2 — 별로 안 맞았다</option>
+            <option value="1">1 — 전혀 아니었다</option>
+          </select>
+
+          <label for="opinion" class="optional-feedback-title">자유 의견 <span>(선택)</span></label>
+          <textarea id="opinion" rows="3" placeholder="개인적인 대화 내용이나 민감한 정보는 적지 말아주세요."></textarea>
+        </div>
+      </div>
+
+      <div class="feedback-placeholder">
+        <p>※ 더 많은 사람들의 피드백을 모아 분석할 수 있는 설문 기능은 준비 중입니다.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <!-- Hero's trace, echoed once more here at very low opacity and with
+       no nacre gradient — a quiet close, not a second highlight moment. -->
+  <svg class="footer-wave" viewBox="0 0 400 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M -30,50 C 40,25 90,70 150,50 C 210,30 250,65 320,45 C 360,33 380,50 430,40"/>
+  </svg>
+  <div class="wrap">
+    <p>MY AI TYPE (AI Personalization Lab) — 실험적 진단 도구입니다. 심리검사가 아닙니다.</p>
+    <p>이 사이트는 OpenAI API를 호출하지 않으며, 여러분의 ChatGPT 대화 내용을 수집하지 않습니다.</p>
+    <p>서비스 개선을 위해 버튼 클릭 등 이용 흐름을 쿠키·개인 식별자 없이 익명으로 집계합니다. 대화 내용, 진단 결과, 직접 입력하신 텍스트는 포함되지 않습니다.</p>
+  </div>
+</footer>
+
+<!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
+     stale cached copy after a redeploy (GitHub Pages assets are cached). -->
+<script src="script.js?v=8"></script>
+</body>
+</html>
