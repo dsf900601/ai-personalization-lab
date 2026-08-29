@@ -486,6 +486,8 @@ Output 규칙:
 
   // Schema 1.0 result DOM (see index.html's #v1Sections) — unused/hidden
   // for legacy [SHARE_RESULT] results.
+  var v1StatusRow = document.getElementById("v1StatusRow");
+  var v1TypePendingPill = document.getElementById("v1TypePendingPill");
   var v1StatusPill = document.getElementById("v1StatusPill");
   var v1TypeSummary = document.getElementById("v1TypeSummary");
   var v1Sections = document.getElementById("v1Sections");
@@ -1155,11 +1157,13 @@ Output 규칙:
   function renderVisualCard(fields) {
     // Reset any Schema 1.0 UI state — the same #resultCard is reused by
     // both engines, so a legacy result must switch it fully back.
+    v1StatusRow.hidden = true;
+    v1TypePendingPill.hidden = true;
     v1StatusPill.hidden = true;
     v1TypeSummary.hidden = true;
     v1Sections.hidden = true;
     resultLegacyBody.hidden = false;
-    resultType.classList.remove("v1-type-null");
+    resultType.classList.remove("v1-headline-plain");
 
     resultCrest.innerHTML = buildCrestMarkup(fields, { size: 160, idPrefix: "onpage" });
     resultType.textContent = fields.TYPE;
@@ -1226,7 +1230,15 @@ Output 규칙:
   // the Schema 1.0 contract's "user-facing terminology" rule. Wording
   // keeps ChatGPT's behavior as the grammatical subject, not the user.
 
+  // Result UX v2 — presentation-only. None of this changes what the
+  // Diagnostic Prompt asks for or how Schema 1.0 is parsed/normalized;
+  // it only changes how an already-normalized result is displayed. See
+  // buildHeroHeadline()/pickDisplayRoles()/pickCoreBehaviors() below for
+  // where the Hero-hierarchy and internal-enum-hiding rules land.
   var TYPE_NULL_FALLBACK_TEXT = "아직 하나의 타입으로 묶기엔 근거가 부족해요";
+  // Short badge used wherever type.label is null (Hero, share card, share
+  // text) — kept to one canonical phrase across all three surfaces.
+  var TYPE_PENDING_BADGE = "TYPE LABEL · 아직 보류";
 
   var ROLE_DISPLAY_MAP = {
     INFORMATION_UNDERSTANDING: "정보 이해",
@@ -1267,9 +1279,17 @@ Output 규칙:
       AI_DECISION_APPLIED: "ChatGPT가 결정까지 적용해요",
     }},
   };
+  // A STABLE axis's badge text now depends on confidence, not a single
+  // static "뚜렷한 경향" label — the badge is the one place confidence
+  // was implicitly visible before, so it should actually say something
+  // (result UX v2, section 4) rather than hide the distinction entirely.
+  var AXIS_STABLE_CONFIDENCE_DISPLAY = {
+    LOW: "제한적으로 확인됨",
+    MEDIUM: "확인된 패턴",
+    HIGH: "반복 확인된 패턴",
+  };
   var AXIS_MODE_DISPLAY = {
-    STABLE: "뚜렷한 경향",
-    CONDITIONAL: "상황에 따라 달라짐",
+    CONDITIONAL: "상황에 따라 달라져요",
     UNRESOLVED: "아직 판단하기 어려움",
   };
   var STATUS_DISPLAY = {
@@ -1286,6 +1306,17 @@ Output 규칙:
   };
   var CERTAINTY_DISPLAY = { LIMITED: "제한적", MODERATE: "중간 정도", STRONG: "강함" };
 
+  // unknown_reason is an internal enum (Diagnostic Prompt section 7) —
+  // never shown raw in the main axis card. Kept mapped here so the main
+  // UI can state *why* an axis is UNRESOLVED in plain language instead of
+  // silently omitting the reason.
+  var UNKNOWN_REASON_DISPLAY = {
+    INSUFFICIENT_EVIDENCE: "아직 판단할 근거가 충분하지 않아요",
+    INSUFFICIENT_OPPORTUNITY: "이 행동을 판단할 만한 상황이 충분히 나타나지 않았어요",
+    UNEXPLAINED_CONTRADICTION: "서로 다른 행동이 확인됐지만 아직 전환 조건을 설명하기 어려워요",
+    ACCESS_LIMITATION: "확인할 수 있는 대화 범위가 제한되어 있어요",
+  };
+
   function humanizeEnum(key) {
     return key ? String(key).toLowerCase().replace(/_/g, " ") : "";
   }
@@ -1294,18 +1325,65 @@ Output 규칙:
   }
   function confidenceRank(c) { return CONFIDENCE_VALUES.indexOf(c); }
 
+  // Best-effort cleanup for free text the engine authored (type.summary,
+  // derived_patterns[].pattern, axes[].supported_pattern/condition_summary)
+  // in case a stray internal token (English jargon, a raw enum word)
+  // leaked into otherwise natural-language Korean prose. This never
+  // changes the diagnostic *meaning* of the text — it only swaps a small,
+  // fixed set of known internal tokens for their user-facing phrasing
+  // (Result UX v2, section 12). It is not a substitute for the Diagnostic
+  // Prompt asking for clean output in the first place.
+  var INTERNAL_JARGON_REPLACEMENTS = [
+    [/\bEvidence\b/g, "확인된 대화"],
+    [/\bINSUFFICIENT_EVIDENCE\b/g, UNKNOWN_REASON_DISPLAY.INSUFFICIENT_EVIDENCE],
+    [/\bINSUFFICIENT_OPPORTUNITY\b/g, UNKNOWN_REASON_DISPLAY.INSUFFICIENT_OPPORTUNITY],
+    [/\bUNEXPLAINED_CONTRADICTION\b/g, UNKNOWN_REASON_DISPLAY.UNEXPLAINED_CONTRADICTION],
+    [/\bACCESS_LIMITATION\b/g, UNKNOWN_REASON_DISPLAY.ACCESS_LIMITATION],
+    [/\bSTABLE\b/g, "뚜렷한 경향"],
+    [/\bCONDITIONAL\b/g, "상황에 따라 달라지는 경향"],
+    [/\bUNRESOLVED\b/g, "아직 판단하기 어려운 상태"],
+    [/\bHIGH\b/g, "반복적으로 확인된 수준"],
+    [/\bMEDIUM\b/g, "어느 정도 확인된 수준"],
+    [/\bLOW\b/g, "제한적인 수준"],
+  ];
+  function sanitizeUserFacingText(text) {
+    if (!text) return text;
+    var out = text;
+    INTERNAL_JARGON_REPLACEMENTS.forEach(function (pair) { out = out.replace(pair[0], pair[1]); });
+    return out.replace(/\s{2,}/g, " ").trim();
+  }
+
+  // Caps engine-authored free text to at most maxSentences sentences and
+  // maxChars characters, so a very long or observation-styled sentence
+  // never dominates a compact card. Splits on '.', '!', '?' where
+  // present; text with no terminator is treated as one sentence and
+  // still gets the character cap.
+  function capSentences(text, maxSentences, maxChars) {
+    if (!text) return "";
+    var sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+    var capped = sentences.slice(0, maxSentences).join("").trim();
+    if (capped.length > maxChars) capped = capped.slice(0, maxChars - 1).trim() + "…";
+    return capped;
+  }
+
   // Roles shown in the main result: PRIMARY_ROLE first, then
-  // SECONDARY_ROLE; NOT_ESTABLISHED is never listed in the main result
-  // (spec section "Roles" display priority).
+  // SECONDARY_ROLE with MEDIUM/HIGH confidence only (a LOW-confidence
+  // secondary role is hidden from the main result — Result UX v2,
+  // section 7). NOT_ESTABLISHED is never listed. Secondary is capped at
+  // 2 so the role area doesn't read as "does everything".
   function pickDisplayRoles(roles) {
     var primary = roles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; });
-    var secondary = roles.filter(function (r) { return r.classification === "SECONDARY_ROLE"; });
+    var secondary = roles
+      .filter(function (r) { return r.classification === "SECONDARY_ROLE" && r.confidence !== "LOW"; })
+      .slice(0, 2);
     return primary.concat(secondary);
   }
 
   // "당신의 ChatGPT는 이렇게 작동해요": derived patterns and STABLE axes
   // that clear MEDIUM/HIGH confidence, capped at 3. Never padded with
-  // low-confidence filler just to fill card slots.
+  // low-confidence filler just to fill card slots. Text is sanitized and
+  // capped to at most 2 sentences so an overly long or observation-styled
+  // engine sentence doesn't take over the card (Result UX v2, section 6).
   function pickCoreBehaviors(normalized) {
     var candidates = [];
     normalized.derivedPatterns.forEach(function (p) {
@@ -1317,7 +1395,26 @@ Output 규칙:
       }
     });
     candidates.sort(function (a, b) { return confidenceRank(b.confidence) - confidenceRank(a.confidence); });
-    return candidates.slice(0, 3);
+    return candidates.slice(0, 3).map(function (c) {
+      return { text: capSentences(sanitizeUserFacingText(c.text), 2, 100), confidence: c.confidence };
+    });
+  }
+
+  // Hero headline when type.label is null (Result UX v2, section 1-2):
+  // the confirmed behavior becomes the star, not the "no type yet"
+  // notice. Built only from data the engine already produced —
+  // type.summary if the engine wrote one, otherwise Primary Role +
+  // strongest MEDIUM/HIGH behavior. Never invents a type name or new
+  // diagnostic content.
+  function buildHeroHeadline(normalized, behaviors, primaryRole) {
+    if (normalized.typeLabel) return normalized.typeLabel;
+    if (normalized.typeSummary) return sanitizeUserFacingText(normalized.typeSummary);
+    if (primaryRole && behaviors[0]) {
+      return roleDisplayName(primaryRole.roleKey) + " 역할을 맡은 ChatGPT예요. " + behaviors[0].text;
+    }
+    if (behaviors[0]) return behaviors[0].text;
+    if (primaryRole) return roleDisplayName(primaryRole.roleKey) + " 역할을 주로 맡고 있는 ChatGPT예요.";
+    return "아직 뚜렷하게 확인된 행동 패턴이 많지 않아요.";
   }
 
   function buildGlyphSvg(glyphCategory, className) {
@@ -1330,23 +1427,64 @@ Output 규칙:
     return svg;
   }
 
-  function buildRoleRow(role) {
-    var displayName = roleDisplayName(role.roleKey);
-    var row = document.createElement("div");
-    row.className = "v1-role-row";
-    row.appendChild(buildGlyphSvg(mapRoleToGlyph(displayName), "v1-role-glyph"));
-
+  // Primary Role is the anchor (bigger, standalone); everything else
+  // (extra roles beyond the first, MEDIUM/HIGH secondaries) renders as
+  // small chips underneath so the role area doesn't read as "does
+  // everything" (Result UX v2, sections 7-8).
+  function buildRoleChip(role) {
+    var chip = document.createElement("span");
+    chip.className = "v1-role-chip";
+    chip.appendChild(buildGlyphSvg(mapRoleToGlyph(roleDisplayName(role.roleKey)), "v1-role-chip-glyph"));
     var nameSpan = document.createElement("span");
-    nameSpan.className = "v1-role-name";
-    nameSpan.textContent = displayName;
-    row.appendChild(nameSpan);
+    nameSpan.textContent = roleDisplayName(role.roleKey);
+    chip.appendChild(nameSpan);
+    return chip;
+  }
 
-    var badge = document.createElement("span");
-    badge.className = "v1-role-badge" + (role.classification === "PRIMARY_ROLE" ? " v1-role-badge-primary" : "");
-    badge.textContent = ROLE_CLASSIFICATION_DISPLAY[role.classification] || "";
-    row.appendChild(badge);
+  function renderRoleSection(container, roles) {
+    while (container.firstChild) container.removeChild(container.firstChild);
+    if (!roles.length) return;
 
-    return row;
+    // roles[0] from pickDisplayRoles() is a PRIMARY_ROLE whenever one
+    // exists (primaries are concatenated first) — that one becomes the
+    // anchor block; everything else becomes chips.
+    var anchor = roles[0].classification === "PRIMARY_ROLE" ? roles[0] : null;
+    var rest = anchor ? roles.slice(1) : roles;
+
+    if (anchor) {
+      var block = document.createElement("div");
+      block.className = "v1-role-primary";
+      block.appendChild(buildGlyphSvg(mapRoleToGlyph(roleDisplayName(anchor.roleKey)), "v1-role-primary-glyph"));
+      var textWrap = document.createElement("div");
+      textWrap.className = "v1-role-primary-text";
+      var name = document.createElement("span");
+      name.className = "v1-role-primary-name";
+      name.textContent = roleDisplayName(anchor.roleKey);
+      var caption = document.createElement("span");
+      caption.className = "v1-role-primary-caption";
+      caption.textContent = ROLE_CLASSIFICATION_DISPLAY.PRIMARY_ROLE;
+      textWrap.appendChild(name);
+      textWrap.appendChild(caption);
+      block.appendChild(textWrap);
+      container.appendChild(block);
+    }
+
+    if (rest.length) {
+      var group = document.createElement("div");
+      group.className = "v1-role-secondary-group";
+      var label = document.createElement("span");
+      label.className = "v1-role-secondary-label";
+      // Almost always true secondaries; only says something more neutral
+      // in the rare case the engine reported more than one PRIMARY_ROLE.
+      var allSecondary = rest.every(function (r) { return r.classification === "SECONDARY_ROLE"; });
+      label.textContent = allSecondary ? ROLE_CLASSIFICATION_DISPLAY.SECONDARY_ROLE : "함께 확인된 역할";
+      group.appendChild(label);
+      var chips = document.createElement("div");
+      chips.className = "v1-role-secondary-chips";
+      rest.forEach(function (r) { chips.appendChild(buildRoleChip(r)); });
+      group.appendChild(chips);
+      container.appendChild(group);
+    }
   }
 
   function buildAxisCard(axis) {
@@ -1362,7 +1500,11 @@ Output 규칙:
     name.textContent = display.name;
     var mode = document.createElement("span");
     mode.className = "v1-axis-mode v1-axis-mode-" + axis.mode.toLowerCase();
-    mode.textContent = AXIS_MODE_DISPLAY[axis.mode];
+    // STABLE's badge text depends on confidence (LOW/MEDIUM/HIGH), never
+    // shown as the raw enum word itself — see AXIS_STABLE_CONFIDENCE_DISPLAY.
+    mode.textContent = axis.mode === "STABLE"
+      ? (AXIS_STABLE_CONFIDENCE_DISPLAY[axis.confidence] || AXIS_STABLE_CONFIDENCE_DISPLAY.MEDIUM)
+      : AXIS_MODE_DISPLAY[axis.mode];
     head.appendChild(name);
     head.appendChild(mode);
     card.appendChild(head);
@@ -1375,18 +1517,25 @@ Output 규칙:
       if (axis.supportedPattern) {
         var note = document.createElement("p");
         note.className = "v1-axis-note";
-        note.textContent = axis.supportedPattern;
+        note.textContent = capSentences(sanitizeUserFacingText(axis.supportedPattern), 2, 90);
         card.appendChild(note);
       }
     } else if (axis.mode === "CONDITIONAL") {
       var cond = document.createElement("p");
       cond.className = "v1-axis-note";
-      cond.textContent = axis.conditionSummary || "상황에 따라 다르게 나타나요.";
+      cond.textContent = axis.conditionSummary
+        ? capSentences(sanitizeUserFacingText(axis.conditionSummary), 2, 90)
+        : "상황에 따라 다르게 나타나요.";
       card.appendChild(cond);
     } else {
+      // unknown_reason is an internal enum (INSUFFICIENT_EVIDENCE, ...) —
+      // always mapped to plain language here, never appended raw.
       var unresolved = document.createElement("p");
       unresolved.className = "v1-axis-note";
-      unresolved.textContent = "아직 한 방향으로 판단하기 어려워요" + (axis.unknownReason ? " — " + axis.unknownReason : ".");
+      var reasonText = axis.unknownReason
+        ? (UNKNOWN_REASON_DISPLAY[axis.unknownReason] || sanitizeUserFacingText(humanizeEnum(axis.unknownReason)))
+        : "";
+      unresolved.textContent = "아직 한 방향으로 판단하기 어려워요" + (reasonText ? " — " + reasonText : ".");
       card.appendChild(unresolved);
     }
 
@@ -1450,21 +1599,52 @@ Output 규칙:
       });
       v1DetailBody.appendChild(ul2);
     }
+
+    // Raw engine state, for anyone who opens this accordion — internal
+    // enums are fine to show here (Result UX v2, section 11), just never
+    // in the main result above.
+    addSection("판단 상태 (원본)", normalized.axes.map(function (a) {
+      var display = AXIS_DISPLAY[a.axisId];
+      var axisLabel = display ? display.name : (humanizeEnum(a.axisName) || a.axisId);
+      return axisLabel + ": " + a.mode + " · " + a.confidence;
+    }));
+
+    if (!normalized.typeLabel) {
+      var h4c = document.createElement("h4");
+      h4c.textContent = "Type 판단";
+      var pc = document.createElement("p");
+      pc.style.margin = "0";
+      pc.textContent = TYPE_NULL_FALLBACK_TEXT;
+      v1DetailBody.appendChild(h4c);
+      v1DetailBody.appendChild(pc);
+    }
   }
 
   function renderV1Result(normalized) {
     resultLegacyBody.hidden = true;
 
+    var displayRoles = pickDisplayRoles(normalized.roles);
+    var primaryRole = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var behaviors = pickCoreBehaviors(normalized);
+    var hasLabel = !!normalized.typeLabel;
+
+    // ---- Hero (Result UX v2, sections 1-2) ----
+    // Type Label present: headline = the label (unchanged gradient
+    // treatment). Type Label null: the confirmed behavior becomes the
+    // headline instead of the "no type yet" notice — that notice moves
+    // to a small pill below, alongside the diagnostic status pill.
+    resultType.textContent = buildHeroHeadline(normalized, behaviors, primaryRole);
+    resultType.classList.toggle("v1-headline-plain", !hasLabel);
+
+    v1TypeSummary.hidden = !(hasLabel && normalized.typeSummary);
+    v1TypeSummary.textContent = hasLabel ? sanitizeUserFacingText(normalized.typeSummary) || "" : "";
+
+    v1StatusRow.hidden = false;
+    v1TypePendingPill.hidden = hasLabel;
+    v1TypePendingPill.textContent = hasLabel ? "" : TYPE_PENDING_BADGE;
     v1StatusPill.hidden = false;
     v1StatusPill.textContent = STATUS_DISPLAY[normalized.status] || STATUS_DISPLAY.INSUFFICIENT;
 
-    resultType.textContent = normalized.typeLabel || TYPE_NULL_FALLBACK_TEXT;
-    resultType.classList.toggle("v1-type-null", !normalized.typeLabel);
-
-    v1TypeSummary.hidden = !normalized.typeSummary;
-    v1TypeSummary.textContent = normalized.typeSummary || "";
-
-    var displayRoles = pickDisplayRoles(normalized.roles);
     var crestRoles = (displayRoles.length ? displayRoles : normalized.roles).slice(0, 3).map(function (r) {
       return { name: roleDisplayName(r.roleKey), percent: null };
     });
@@ -1476,7 +1656,7 @@ Output 규칙:
       { size: 160, idPrefix: "onpage-v1", rolesOverride: crestRoles }
     );
 
-    var behaviors = pickCoreBehaviors(normalized);
+    // ---- 핵심 행동 패턴 ----
     while (v1BehaviorList.firstChild) v1BehaviorList.removeChild(v1BehaviorList.firstChild);
     behaviors.forEach(function (b) {
       var li = document.createElement("li");
@@ -1486,23 +1666,26 @@ Output 규칙:
     });
     v1BehaviorSection.hidden = behaviors.length === 0;
 
-    while (v1RoleList.firstChild) v1RoleList.removeChild(v1RoleList.firstChild);
-    displayRoles.forEach(function (r) { v1RoleList.appendChild(buildRoleRow(r)); });
+    // ---- 주요 역할 ----
+    renderRoleSection(v1RoleList, displayRoles);
     v1RoleSection.hidden = displayRoles.length === 0;
 
+    // ---- ChatGPT 행동 축 ----
     while (v1AxisList.firstChild) v1AxisList.removeChild(v1AxisList.firstChild);
     normalized.axes.forEach(function (a) { v1AxisList.appendChild(buildAxisCard(a)); });
     v1AxisSection.hidden = normalized.axes.length === 0;
 
+    // ---- 반복되는 습관 ----
     while (v1HabitList.firstChild) v1HabitList.removeChild(v1HabitList.firstChild);
     normalized.personalHabits.forEach(function (h) {
       var li = document.createElement("li");
       li.className = "v1-habit-item";
-      li.textContent = h.habit;
+      li.textContent = sanitizeUserFacingText(h.habit);
       v1HabitList.appendChild(li);
     });
     v1HabitSection.hidden = normalized.personalHabits.length === 0;
 
+    // ---- 왜 이렇게 나왔나요? ----
     renderV1Detail(normalized);
     v1Sections.hidden = false;
   }
@@ -1728,38 +1911,55 @@ Output 규칙:
       "</g>");
     y += crestSize + 70;
 
+    // Result UX v2, section 14: a null type.label must never make the
+    // card read as "no result". The headline becomes the confirmed
+    // behavior summary (same source as the on-page Hero — never a
+    // fabricated type name), and the null state is demoted to a small
+    // caption instead of the big centered headline.
     var hasLabel = !!normalized.typeLabel;
-    var typeText = hasLabel ? normalized.typeLabel : TYPE_NULL_FALLBACK_TEXT;
-    var typeFit = fitText(mctx, typeText, {
-      maxWidth: 880, maxLines: 2, startSize: hasLabel ? 60 : 42, minSize: hasLabel ? 36 : 28,
+    var behaviors = pickCoreBehaviors(normalized);
+    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var headlineText = hasLabel ? normalized.typeLabel : buildHeroHeadline(normalized, behaviors, primary);
+    var typeFit = fitText(mctx, headlineText, {
+      maxWidth: 880, maxLines: hasLabel ? 2 : 3, startSize: hasLabel ? 60 : 40, minSize: hasLabel ? 36 : 26,
       fontWeight: 700, fontFamily: CARD_FONT,
     });
     var typeLineHeight = typeFit.fontSize * 1.3;
     typeFit.lines.forEach(function (line, i) {
       parts.push(textEl(cx, y + typeLineHeight * (i + 0.8), line, {
         size: typeFit.fontSize, weight: 700,
-        color: hasLabel ? "url(#typeGrad)" : COLORS.textMuted,
+        color: hasLabel ? "url(#typeGrad)" : COLORS.pearlWhite,
         anchor: "middle",
       }));
     });
-    y += typeLineHeight * typeFit.lines.length + 50;
+    y += typeLineHeight * typeFit.lines.length + 34;
+
+    if (!hasLabel) {
+      parts.push(textEl(cx, y, TYPE_PENDING_BADGE, { size: 22, weight: 600, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
+      y += 46;
+    }
+    y += 16;
 
     var left = 120, right = W - 120, areaWidth = right - left;
 
-    var summaryText = normalized.typeSummary || (pickCoreBehaviors(normalized)[0] && pickCoreBehaviors(normalized)[0].text) || "";
-    if (summaryText) {
-      var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 3, startSize: 30, minSize: 22, fontWeight: 400, fontFamily: CARD_FONT });
-      var summaryLineHeight = summaryFit.fontSize * 1.5;
-      summaryFit.lines.forEach(function (line, i) {
-        parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "middle" }));
-      });
-      y += summaryLineHeight * summaryFit.lines.length + 40;
+    // The label-present card still gets its own summary/pattern line
+    // below the headline; the null-label card's headline already
+    // absorbed that content, so it isn't repeated here.
+    if (hasLabel) {
+      var summaryText = normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "";
+      if (summaryText) {
+        var summaryFit = fitText(mctx, summaryText, { maxWidth: areaWidth, maxLines: 3, startSize: 30, minSize: 22, fontWeight: 400, fontFamily: CARD_FONT });
+        var summaryLineHeight = summaryFit.fontSize * 1.5;
+        summaryFit.lines.forEach(function (line, i) {
+          parts.push(textEl(cx, y + summaryLineHeight * (i + 0.8), line, { size: summaryFit.fontSize, weight: 400, color: COLORS.textMuted, anchor: "middle" }));
+        });
+        y += summaryLineHeight * summaryFit.lines.length + 40;
+      }
     }
 
     parts.push('<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="rgba(232,235,231,0.2)" stroke-dasharray="2 10" stroke-linecap="round"/>');
     y += 60;
 
-    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
     if (primary) {
       parts.push(textEl(cx, y + 24, "주요 역할", { size: 20, weight: 500, color: COLORS.textMuted, anchor: "middle", letterSpacing: 1 }));
       parts.push(textEl(cx, y + 66, roleDisplayName(primary.roleKey), { size: 32, weight: 600, color: COLORS.pearlWhite, anchor: "middle" }));
@@ -1789,22 +1989,38 @@ Output 규칙:
   // Schema 1.0 plain-text share output — same minimal-info scope as
   // buildCardSVGv1 (type, one summary line, primary role), plus the
   // optional accuracy/opinion fields shared with the legacy path.
+  //
+  // Result UX v2, section 13: when type.label is null, the confirmed
+  // behavior leads and the null state is a small trailing line, not the
+  // opening "유형: ..." line.
   function buildShareTextV1(normalized) {
+    var displayRoles = pickDisplayRoles(normalized.roles);
+    var primary = displayRoles.filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
+    var behaviors = pickCoreBehaviors(normalized);
+
     var lines = [];
-    lines.push("🧪 MY AI TYPE — ChatGPT 행동 진단");
+    lines.push("🧪 MY AI TYPE");
     lines.push("");
-    lines.push("유형: " + (normalized.typeLabel || TYPE_NULL_FALLBACK_TEXT));
 
-    var summaryText = normalized.typeSummary || (pickCoreBehaviors(normalized)[0] && pickCoreBehaviors(normalized)[0].text) || "";
-    if (summaryText) {
+    if (normalized.typeLabel) {
+      lines.push("유형: " + normalized.typeLabel);
+      var summaryText = normalized.typeSummary || (behaviors[0] && behaviors[0].text) || "";
+      if (summaryText) {
+        lines.push("");
+        lines.push(summaryText);
+      }
+      if (primary) {
+        lines.push("");
+        lines.push("주요 역할: " + roleDisplayName(primary.roleKey));
+      }
+    } else {
+      lines.push("내 ChatGPT의 현재 패턴");
       lines.push("");
-      lines.push(summaryText);
-    }
-
-    var primary = pickDisplayRoles(normalized.roles).filter(function (r) { return r.classification === "PRIMARY_ROLE"; })[0];
-    if (primary) {
+      if (primary) lines.push(roleDisplayName(primary.roleKey) + " 역할이 가장 분명하게 나타났어요.");
+      if (behaviors[0]) lines.push(behaviors[0].text);
+      if (behaviors[1]) lines.push(behaviors[1].text);
       lines.push("");
-      lines.push("주요 역할: " + roleDisplayName(primary.roleKey));
+      lines.push("TYPE LABEL · 아직 분석 중");
     }
 
     if (accuracySelect && accuracySelect.value) {
