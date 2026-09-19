@@ -857,6 +857,94 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 }
 .glyph-dot { fill: currentColor; stroke: none; }
 
+/* ---------- Probe-based Diagnostic Prototype (Beta) ---------- */
+/* A second, independent entry point next to the main Diagnostic Prompt —
+   reuses existing tokens/components (.btn, .prompt-box, .prompt-pre,
+   .copy-feedback, .parse-status, .section-sub) instead of introducing a
+   new color system. Mobile-first like the rest of the page: base rules
+   are the small-screen layout, the shared "Larger screens" query below
+   already widens .btn-large and .wrap for every section including this one. */
+.probe-beta {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+.probe-beta-teaser { text-align: center; }
+.probe-beta-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--nacre-periwinkle);
+  border: 1px solid rgba(155, 138, 203, 0.4);
+  border-radius: 999px;
+  padding: 3px 11px;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+}
+.probe-beta-teaser h2 { margin-bottom: 6px; }
+.probe-beta-teaser .section-sub { margin-bottom: 18px; }
+
+.probe-beta-flow { margin-top: 8px; }
+.probe-beta-flow-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+}
+.probe-step { display: flex; flex-direction: column; gap: 10px; }
+.probe-step-progress {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--nacre-cyan);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+.probe-step-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.probe-step label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.probe-step textarea {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  resize: vertical;
+  width: 100%;
+}
+.probe-step textarea:focus {
+  outline: 2px solid var(--nacre-cyan);
+  outline-offset: 1px;
+}
+.probe-step .btn-large { margin-top: 2px; }
+
+.probe-analyzer-result { margin-top: 28px; }
+.probe-analyzer-guide {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.probe-analyzer-guide p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: left;
+}
+
 /* ---------- Larger screens ---------- */
 @media (min-width: 700px) {
   .wrap { max-width: 720px; }

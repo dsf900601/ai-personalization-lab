@@ -2585,4 +2585,567 @@ Output 규칙:
       });
     });
   }
+
+  // ---------- Probe-based Diagnostic Prototype (Beta) ----------
+  //
+  // A second, independent entry point. Instead of running one large
+  // DIAGNOSTIC_PROMPT, the user runs 3 short Probe questions against
+  // their own AI and pastes each response here. Once all three are
+  // collected, buildAnalyzerPrompt() assembles a separate Analyzer
+  // Prompt whose REQUIRED output is the same Schema 1.0 JSON as
+  // DIAGNOSTIC_PROMPT — so its result is pasted into the existing
+  // #resultInput / #parseBtn flow above and goes through
+  // parseDiagnosticResult / normalizeSchemaV1 / renderV1Result /
+  // buildCardSVGv1 completely unchanged. This block never modifies
+  // DIAGNOSTIC_PROMPT, the parser/normalizer, or the Result UI — see
+  // the compatibility notes on buildAnalyzerPrompt() below.
+  //
+  // Per design decision (F1): DIAGNOSTIC_PROMPT is not refactored or
+  // decomposed into shared constants for this prototype, even though
+  // the Analyzer Prompt restates similar Stage-Gated Pipeline rules.
+  // Some text duplication between the two prompts is accepted here in
+  // exchange for keeping the existing diagnostic contract untouched.
+
+  // Diagnostic Probe v0.1 — experimental wording, not final. Not
+  // rephrased here: changing the copy would change what the prototype is
+  // actually testing.
+  var PROBE_A = "나 요즘 새로운 걸 하나 시작해볼까 고민 중이야. 지금 시작한다면 뭘 해보는 게 좋을까?";
+  var PROBE_B = "나 이번 주 안에 뭔가 하나 실제로 해보고 싶어. 나 좀 도와줘.";
+  var PROBE_C = "요즘 내가 하던 방식이 계속 괜찮은 건지 조금 고민돼. 너는 어떻게 생각해?";
+
+  // ---- Analyzer Prompt text (fixed parts) ----
+  //
+  // Split into INTRO (ends right after the "분석 대상" header) and BODY
+  // (starts at Observation Extraction) so the 3 actual Probe responses —
+  // arbitrary user-pasted text that may itself contain backticks or
+  // "${" sequences — can be spliced in with plain string concatenation
+  // in buildAnalyzerPrompt() below, never interpolated into a template
+  // literal. That keeps a pasted response from ever being able to alter
+  // the surrounding prompt text.
+  var ANALYZER_PROMPT_INTRO = `이 분석은 나(사용자)의 성격을 검사하는 것이 아니라, 서로 다른 상황에서 짧게 주고받은 3개의 대화(Probe)에 대해 지금 너(AI)가 실제로 어떻게 응답했는지를 바탕으로, 너의 응답 행동이 어떤 방식으로 개인화되어 있는지를 분석하는 것이다.
+
+전체 대화 기록을 참고하는 방식이 아니라, 아래 3개의 독립적인 Probe 질문과 그에 대해 실제로 나온 응답만을 분석 대상으로 삼는다. 각 Probe는 특정 행동을 하라고 직접 요구하지 않는 열린 질문이며, 그 응답에서 자연스럽게 드러난 행동을 관찰하기 위한 것이다.
+
+분석 대상은 **"사용자가 어떤 사람인가"가 아니라 "이 3개의 응답에서 너(AI)가 어떤 행동적 방식으로 반응했는가"**다. 성격 검사, 지능 검사, 프롬프트 능력 평가가 아니고 우열을 매기는 것도 아니다. 결과 문장의 주어는 가능한 한 "나(사용자)"가 아니라 "너(AI)"여야 한다.
+
+지키는 것:
+
+- 실제로 확인할 수 있는 범위만 말하고, 근거가 부족하면 부족하다고 그대로 밝혀라. 그럴듯한 개인화 서사를 억지로 만들지 마라.
+- 전체 AI 사용자에 대한 통계나 분포를 아는 것처럼 굴지 마라. 확인할 수 없는 백분위, "상위 몇 %" 같은 비교는 쓰지 마라.
+- 근거 없는 구체적인 과거 사례를 지어내지 마라.
+- 각 항목의 근거 강도가 다르면 다른 그대로 표시해라. 모든 항목을 억지로 높은 확신으로 몰아가지 마라.
+
+## 0. Prompt Compliance Exclusion (가장 중요한 원칙)
+
+**Prompt-compliance alone is not personalization evidence.** 아래 3개의 Probe는 각각 특정 행동을 직접 요구하지 않지만, 어떤 응답이든 "질문이 원래 요구한 범위 안에서 성실히 답한 것"과 "질문이 요구하지 않았는데 스스로 덧붙인 행동"은 전혀 다른 근거 가치를 가진다.
+
+각 observable behavior를 Evidence로 승격하기 전에 반드시 다음을 구분해라:
+
+- Probe가 직접 요구한 행동(prompt compliance) — 이것만으로는 어떤 Axis의 Evidence도 아니다.
+- Probe 수행 과정에서 AI가 자발적으로 추가한 행동(spontaneous behavior) — 이것만 Evidence 후보가 될 수 있다.
+
+예시:
+- Probe A는 무엇을 해보면 좋을지 추천을 요청한다. AI가 추천했다는 사실 자체는 AXIS_06(결정 주체)의 Evidence가 아니다 — 추천은 질문이 요구한 것이기 때문이다. 반면 사용자가 요청하지 않았는데 AI가 사용자의 과거 프로젝트나 장기 맥락을 스스로 가져와 그 추천의 근거로 삼았다면, 그것은 AXIS_01(맥락 활용)의 Evidence 후보가 될 수 있다.
+- Probe B는 도와달라는 요청이다. AI가 도움을 줬다는 사실 자체는 Evidence가 아니다. 그 도움의 범위를 AI가 스스로 넓혔는지(AXIS_05), 사용자에게 최종 선택지를 열어뒀는지 아니면 AI가 스스로 결정해버렸는지(AXIS_06)가 관찰 대상이다.
+- Probe C는 어떻게 생각하는지 의견을 요청한다. AI가 의견을 냈다는 사실 자체는 Evidence가 아니다. 그 의견이 사용자의 기존 방향을 실제로 재검토하고 반론·대안을 제시했는지(AXIS_04)가 관찰 대상이다.
+
+Probe가 요구한 행동과 AI가 자발적으로 수행한 행동의 구분이 명확하지 않으면, 보수적으로 **Evidence로 승격하지 마라(\`NOT_EVIDENCE\`)**.
+
+## 0-1. Opportunity to Observe
+
+행동이 관찰되지 않았다는 사실 자체는 반대 방향의 Evidence가 아니다. 어떤 Probe Response에 특정 Axis의 방향을 보여줄 실질적인 기회 자체가 없었다면(예: 재검토할 만한 기존 방향이 애초에 언급되지 않은 경우), 그 Response는 해당 Axis에서 그냥 \`NOT_EVIDENCE\`로 처리하고, 그로 인해 Axis 전체가 판단 불가라면 \`UNRESOLVED\`(\`unknown_reason: "INSUFFICIENT_OPPORTUNITY"\`)를 우선한다. 기회가 없었던 것을 근거로 반대 방향을 판정하지 마라.
+
+## 0-2. 여러 Probe에 걸친 반복 Evidence
+
+같은 메커니즘의 행동이 서로 다른 독립적인 Probe Response(A/B/C)에서 반복적으로 나타나면, 그것은 confidence 판단에서 더 강한 근거로 고려될 수 있다 — 이는 기존 confidence 정의("HIGH는 항상 반복을 요구한다")를 그대로 적용한 것일 뿐, 반복 횟수에 따라 특정 mode나 confidence가 기계적으로 정해지는 새로운 규칙이 아니다. 예를 들어 "1회=LOW, 2회=CONDITIONAL, 3회=STABLE" 같은 고정 공식은 존재하지 않는다. 단 하나의 Response에서만 나타난 행동은 그 자체로 STABLE 판정의 근거로 쓰지 말고, 아래 8번(Conservative Condition Discovery)과 10번(Confidence의 정의) 원칙을 그대로 적용해 신중하게 판단해라.
+
+---
+
+## 1. 분석 절차 (Stage-Gated Pipeline)
+
+아래 순서를 반드시 지켜라. 뒤 단계 결과에 맞추려고 앞 단계 결과를 역으로 고치지 마라.
+
+1. Probe Response A/B/C (분석 대상 원문, 아래 2번)
+2. Observation Extraction (Response별로 수행)
+3. **OBSERVATION LOCK**
+4. Evidence Mapping (Prompt Compliance Exclusion 적용)
+5. **EVIDENCE LOCK**
+6. Evidence Aggregation (반복 여부 확인 포함)
+7. Core Axis Results
+8. Role Synthesis
+9. Personal Habit Synthesis
+10. Derived Pattern Synthesis
+11. Attribution
+12. Type Signature
+13. Type Label
+14. Output Serialization
+
+## 2. 분석 대상: Probe Response
+
+`;
+
+  var ANALYZER_PROMPT_BODY = `
+
+## 3. Observation Extraction과 OBSERVATION LOCK
+
+위 3개의 Response 각각에서, 실제로 있었던 구체적인 행동 사례를 관찰 단위(Observation)로 뽑아내고 각각 식별자(\`OBS_01\`, \`OBS_02\`, ...)를 붙여라. 어느 Probe(A/B/C)에서 나온 Observation인지는 \`context\` 필드에 명시해라(예: "Probe A 응답에서").
+
+**Prompt Compliance Exclusion(0번)에 따라, Probe가 직접 요구한 행동 자체는 Observation으로 뽑더라도 다음 단계(Evidence Mapping)에서 자동으로 \`NOT_EVIDENCE\`가 된다는 점을 염두에 두어라.**
+
+Observation을 다 뽑았으면 그 목록을 그대로 확정(LOCK)해라. 그 이후 단계에서는:
+
+- Observation을 새로 추가하지 마라
+- 삭제하지 마라
+- 병합하거나 쪼개지 마라
+- \`behavior\`/\`context\`/\`metadata\` 내용을 수정하지 마라
+- 뒤 단계 결과에 맞추기 위해 Observation을 다시 쓰거나 재해석하지 마라
+
+## 4. Evidence Mapping과 EVIDENCE LOCK
+
+Locked Observation 각각을, 아래 6개 Axis 각각에 대해 다음 셋 중 하나로 매핑해라:
+
+- \`SUPPORTS_DIRECTION_A\`
+- \`SUPPORTS_DIRECTION_B\`
+- \`NOT_EVIDENCE\`
+
+이때 0번의 Prompt Compliance Exclusion을 반드시 적용해라: Probe가 직접 요구한 행동이거나, 자발적 행동인지 판단이 불명확한 Observation은 \`NOT_EVIDENCE\`로 매핑해라.
+
+모든 매핑을 마쳤으면 그대로 확정(LOCK)해라. 그 이후 단계에서는 A↔B, Evidence↔NOT_EVIDENCE로 바꾸지 말고, 새로운 Evidence를 만들어내지 마라.
+
+## 5. Positive Evidence Rule (모든 Axis, 양방향 동일 적용)
+
+어떤 Direction(A 또는 B)의 Evidence가 되려면, 그 Direction을 실제로 보여주는 **positive한 행동**이 Locked Observation의 \`behavior\`에 실제로 있어야 한다.
+
+- B의 근거가 없다고 그것이 A의 근거가 되지 않는다.
+- A의 근거가 없다고 그것이 B의 근거가 되지 않는다.
+- 행동이 "없었다"는 사실 자체는 반대 Direction의 Evidence가 아니다.
+
+## 6. Relational Context Sufficiency
+
+일부 Axis(특히 02, 04, 05, 06) 판단은 그 행동이 다음 중 무엇이었는지 구분할 수 있어야만 성립한다:
+
+- 사용자가 직접 요청한 것인지 vs 요청하지 않았는데 AI가 스스로 추가한 것인지
+- 사용자 방향을 보존한 것인지 vs 다시 연 것인지
+- 요청 범위 안에 머문 것인지 vs 범위를 벗어나 능동적으로 확장한 것인지
+- 사용자가 실질적 선택권을 돌려받은 것인지 vs AI가 실질적 결정을 내린 것인지
+
+이 구분에 필요한 관계적 정보를 Observation에서 확인할 수 없으면, 그 Observation은 해당 Axis에서 \`NOT_EVIDENCE\`로 처리해라. AI의 행동 자체가 보인다는 것만으로는 부족하다. 이 규칙은 Axis 02/04/05/06에 엄격히 적용한다.
+
+## 7. 6대 행동 축 (Core Behavior Axes) — 세부 경계
+
+### AXIS_01 — 맥락 활용 (CONTEXT_USE)
+
+질문: 누적된 이전 맥락이 지금 AI의 판단이나 응답을 실제로 바꾸는가?
+
+- A \`CURRENT_REQUEST_FOCUSED\`
+- B \`ACCUMULATED_CONTEXT_INTEGRATED\`
+
+경계:
+- 과거 정보를 단순히 언급하는 것만으로는 B가 아니다.
+- "기억하고 있다"는 사실만으로는 B가 아니다.
+- 사용자가 이번 Probe에서 다시 명시한 기준을 그대로 쓰는 것만으로는 B가 아니다.
+- B는 이번 Probe만으로는 존재하지 않는, 이전부터 접근 가능했던 맥락이 실제 판단 기준으로 재사용되어 지금 응답이 달라진 Evidence가 있어야 한다.
+- B가 아니라고 자동으로 A인 것은 아니다.
+
+### AXIS_02 — 요청 해석 (REQUEST_INTERPRETATION)
+
+- A \`EXPLICIT_TASK_FOCUSED\`
+- B \`HIGHER_GOAL_INTEGRATED\`
+
+경계:
+- 상위 목표는 반드시 접근 가능한 맥락에 근거해야 한다. 사용자의 숨은 의도·성격·욕구를 추측해서 만들지 마라.
+- Scope Expansion(축 05)과 Higher Goal Integration(축 02)을 혼동하지 마라.
+- Relational Context Sufficiency(6번)가 부족하면 \`NOT_EVIDENCE\`.
+
+### AXIS_03 — 추론 협업 (REASONING_COLLABORATION)
+
+- A \`SOLUTION_DELIVERY\`
+- B \`SHARED_REASONING_DEVELOPMENT\`
+
+경계:
+- 답변이 길고 상세하다는 것 자체는 B가 아니다.
+- B가 되려면 사용자와 가설·기준·구분·정의·추론 구조 등을 실제로 함께 수정·정교화·재평가한 행동이 있어야 한다.
+
+### AXIS_04 — 방향 처리 (DIRECTION_HANDLING)
+
+- A \`DIRECTION_PRESERVING\`
+- B \`DIRECTION_REEVALUATING\`
+
+경계:
+- 단순히 지시를 따랐다는 것만으로는 A가 아니다. A는 실제로 방향을 지키려는 positive한 행동이 있어야 한다.
+- B는 사용자 방향을 실제로 다시 검토하고, 반론·수정·대안을 제시한 행동이 있어야 한다.
+- Probe C처럼 재검토할 기회를 열어주는 질문이라도, AI가 실제로 반론이나 대안을 제시하지 않고 그냥 동의만 했다면 B가 아니다.
+- "재검토가 없었다"는 사실만으로 A가 되는 것도 아니다 — 재검토할 실질적 기회가 없었다면(예: 사용자가 재검토할 만한 구체적 방향을 언급하지 않은 경우) 0-1번(Opportunity to Observe)에 따라 \`NOT_EVIDENCE\`로 처리해라.
+
+### AXIS_05 — 범위 처리 (SCOPE_HANDLING)
+
+- A \`REQUEST_SCOPE_BOUND\`
+- B \`PROACTIVE_SCOPE_EXPANSION\`
+
+경계:
+- 단순히 요청을 따른 것만으로는 A가 아니다. A는 범위를 지키려는 실제 positive한 행동이 있어야 한다.
+- B가 되려면, 지금 요청을 완료하는 데 꼭 필요하지 않은 별도의 관련 행동을 AI가 스스로 추가한 Evidence가 있어야 한다.
+- Probe A/B는 원래 열려있는 질문이므로, 그 열린 범위 안에서 성실하게 답한 것 자체는 B가 아니다 — 질문이 이미 요청한 범위를 실제로 벗어난 자발적 행동만 B다.
+- 일반적인 "더 도와드릴까요?" 같은 문구는 Evidence가 아니다.
+- Relational Context Sufficiency(6번)가 부족하면 \`NOT_EVIDENCE\`.
+
+### AXIS_06 — 결정 주체 (DECISION_AGENCY)
+
+먼저 **Substantive Decision Opportunity**가 있어야 한다: 실제로 의미 있는 대안들 사이에서 사용자와 AI 중 누가 최종 방향/값/옵션을 결정했는지 관찰 가능한 상황이어야 한다.
+
+**Task-Inherent Micro-Choice Exclusion** — 아래는 그 자체로 이 축의 Evidence가 아니다: 단어 선택, 일반적인 문장 구성, 세부 표현, 일반적인 포맷팅.
+
+- A \`USER_DECISION_RETURNED\`: AI가 실질적인 선택지를 사용자에게 열어두거나 최종 선택을 요청한 positive한 행동이 있어야 한다. Probe A에서 단순 추천만 한 것은 A가 아니다(Prompt Compliance Exclusion).
+- B \`AI_DECISION_APPLIED\`: AI가 실질적인 선택을 스스로 고르고 확정·적용한 경우.
+
+## 8. Conservative Condition Discovery
+
+양방향 Evidence가 둘 다 있다고 자동으로 CONDITIONAL로 만들지 마라. CONDITIONAL은 다음 중 하나를 만족할 때만 허용한다:
+
+1. 실질적으로 같은 전환 조건이 서로 다른 독립적인 Probe Response들에서 반복적으로 나타남.
+2. 접근 가능한, 명시적인 이전 규칙/조건이 방향 차이를 직접 설명함.
+
+한 쌍의 사례만 보고 조건을 만들어내지 마라. Probe는 단 3개뿐이므로, 조건이 충분히 뒷받침되지 않으면 CONDITIONAL이 아니라 UNRESOLVED로 남겨라.
+
+## 9. Axis Result 작성 규칙
+
+각 Axis는 \`direction\`/\`mode\`/\`confidence\`/\`condition_summary\`/\`supported_pattern\`/\`evidence_ids\`/\`counterevidence_ids\`/\`unknown_reason\`을 가진다.
+
+- **STABLE**: \`direction\`은 A 또는 B 중 실제로 확인된 값.
+- **CONDITIONAL**: \`direction\`은 문자열 \`"CONDITIONAL"\`. \`counterevidence_ids\`는 항상 \`[]\`.
+- **UNRESOLVED**: \`direction\`은 문자열 \`"UNRESOLVED"\`. \`counterevidence_ids\`는 항상 \`[]\`. \`unknown_reason\` 후보: \`INSUFFICIENT_EVIDENCE\` / \`INSUFFICIENT_OPPORTUNITY\` / \`UNEXPLAINED_CONTRADICTION\` / \`ACCESS_LIMITATION\`. Probe 기반 분석에서는 관찰 기회 자체가 3개뿐이므로 \`INSUFFICIENT_OPPORTUNITY\`/\`INSUFFICIENT_EVIDENCE\`가 흔히 나올 수 있고, 이는 정상적인 결과다.
+
+## 10. Confidence의 정의
+
+confidence는 "이 Direction이 맞을 확률"이 아니라, "지금 이 Axis Result가 접근 가능한 Evidence에 의해 얼마나 안정적으로 지지되는가"를 뜻한다.
+
+- **LOW**: 근거가 매우 제한적이거나 관찰 기회가 약함.
+- **MEDIUM**: 직접 관련된 Evidence가 있고 지금 Result를 선택할 정도는 되지만, 반복·독립적 사례가 제한적임.
+- **HIGH**: 서로 다른 독립적인 Probe Response 여러 개에서 같은 메커니즘이 반복 확인되고, Evidence의 질과 관찰 기회가 충분함.
+
+**단 하나의 매우 명확한 Observation만으로 HIGH를 주지 마라(HIGH는 항상 "반복"을 요구한다).** Probe는 3개뿐이므로 이 원칙을 특히 보수적으로 적용해라 — 반복이 확인되어도 그것만으로 자동으로 HIGH가 되는 것이 아니라, Evidence의 질과 독립성을 함께 봐야 한다.
+
+## 11. 역할 구성 (Roles)
+
+지금 AI의 역할을 아래 5개 중에서만 골라 분류해라:
+
+- INFORMATION_UNDERSTANDING (정보 이해)
+- ANALYSIS_JUDGMENT (분석·판단)
+- CREATION_PRODUCTION (창작·제작)
+- EXECUTION_MANAGEMENT (실행·관리)
+- CONVERSATION_ORGANIZATION (대화·정리)
+
+각 역할마다 PRIMARY_ROLE/SECONDARY_ROLE/NOT_ESTABLISHED 중 하나로 분류하고 확신도(LOW/MEDIUM/HIGH)를 매겨라. 역할 구성비(%)는 매기지 마라. PRIMARY_ROLE은 보통 1~2개를 넘지 않는다. 근거는 Locked Observation의 \`evidence_ids\`로 남겨라. Probe 3개만으로는 역할 판단의 근거가 제한적일 수 있다는 점을 감안해, 근거가 부족하면 NOT_ESTABLISHED로 남겨라.
+
+## 12. 반복되는 개인 습관 (Personal Habits)
+
+역할이나 행동 축으로 설명되지 않는, 더 작고 구체적인 반복 습관이 3개 Response에 걸쳐 나타나면 적어라. 근거가 부족하면 억지로 채우지 말고 빈 목록으로 둬도 괜찮다.
+
+## 13. 도출된 패턴 (Derived Patterns)
+
+위 역할·행동 축·습관을 종합했을 때만 보이는 더 상위의 패턴이 있으면 적어라. 개별 항목의 재진술이 아니라, 여러 항목이 결합될 때만 드러나는 것이어야 한다. 근거가 부족하면 빈 목록으로 둬도 괜찮다.
+
+## 14. 개인화의 출처 (Attribution)
+
+지금 관찰되는 주요 행동이 어디서 비롯됐을 가능성이 큰지 항목별로 표시해라:
+
+- EXPLICIT / LEARNED / CONTEXTUAL / SITUATIONAL / BASELINE_POSSIBLE
+
+확신도는 LIMITED/MODERATE/STRONG 중 하나로, 그렇게 판단한 이유도 함께 적어라. Attribution은 "왜 이런 행동이 나타났는가"에 대한 보수적인 설명일 뿐, Type Signature/Type Label을 결정하는 근거가 아니다.
+
+## 15. Type Signature Confidence Gate
+
+Type Signature의 핵심 재료는 원칙적으로 **MEDIUM 또는 HIGH confidence로 지지된 Result만** 사용해라. LOW confidence Result는 보조 설명으로만 쓰고, Type Signature나 Type Label을 결정하는 핵심 재료로 승격하지 마라. Probe 3개만으로는 이 게이트를 통과하는 Result가 거의 없을 수 있다 — 그렇다면 \`type.label\`은 \`null\`이 되는 것이 정상이다.
+
+## 16. Type Label Semantic Anchoring
+
+Type Label을 붙이려면, Type Signature에 실제로 포함된 강하게 지지된 요소 중 최소 하나와 의미적으로 분명히 연결되어야 한다. Signature와 무관한 추상적인 이름을 만들지 마라. 충분한 Signature가 없으면 \`type.label\`은 \`null\`. 이름을 지어내지 마라 — null도 정상적인 결과다.
+
+## 17. 반증 및 불확실성 점검
+
+지금까지의 분석이 실제 개인화가 아니라 Probe 질문 자체가 유도한 응답이거나 일반적인 AI 행동을 개인화로 오인했을 가능성을 검토해라. 특히:
+
+- Prompt Compliance Exclusion을 놓치고 Probe가 요구한 행동을 Evidence로 잘못 승격하지 않았는지
+- Probe가 단 3개뿐이라는 한계 때문에 실제로는 확신할 수 없는 것에 과도한 confidence를 주지 않았는지
+
+를 반드시 재점검해라.
+
+---
+
+이제 위 내용을 바탕으로 사람이 읽는 자연어 분석을 먼저 자유롭게 서술해라 (Stage-Gated Pipeline 순서를 따라가며 설명하면 된다). 사용자-facing 설명 문장의 주어는 AI의 행동이어야 한다.
+
+그 다음, 답변의 **가장 마지막에**, 다른 설명 없이 아래 JSON 스키마를 그대로 채운 JSON 객체 하나만 코드블록(\`\`\`json ... \`\`\`)으로 출력해라. 이 JSON은 서술한 내용을 요약하거나 대체하는 것이 아니라, 웹페이지가 자동으로 결과를 읽기 위한 별도의 기계 판독용 데이터다.
+
+Output 규칙:
+
+- 모든 key를 그대로 포함해라. 값이 없으면 \`null\` 또는 빈 배열 \`[]\`을 써라. 문자열 \`"없음"\`을 쓰지 마라.
+- \`schema_version\`은 반드시 정확히 \`"1.0"\` 문자열이어야 한다.
+- \`type.label\`은 16번(Semantic Anchoring)을 만족하지 못하면 반드시 \`null\`.
+- \`roles[].role\`은 반드시 11번의 5개 값 중 하나.
+- \`axes\`는 반드시 AXIS_01~AXIS_06 여섯 개를 모두 포함해야 한다.
+- \`axes[].mode\`가 \`CONDITIONAL\`이면 \`direction\`은 \`"CONDITIONAL"\`, \`counterevidence_ids\`는 \`[]\`.
+- \`axes[].mode\`가 \`UNRESOLVED\`이면 \`direction\`은 \`"UNRESOLVED"\`, \`counterevidence_ids\`는 \`[]\`.
+- 각 축의 \`direction\`은 반드시 그 축에 정의된 두 값(A/B) 중 하나이거나, CONDITIONAL/UNRESOLVED일 때의 위 규칙을 따라야 한다. 존재하지 않는 값을 만들어내지 마라.
+- \`evidence_ids\`/\`counterevidence_ids\`는 반드시 \`evidence.observations[].observation_id\`에 실제로 존재하는 값만 참조해라. 없는 id를 새로 만들지 마라.
+- \`attribution[].certainty\`는 LIMITED / MODERATE / STRONG 중 하나로.
+- 모든 \`confidence\` 값은 LOW / MEDIUM / HIGH 중 하나로.
+- \`evidence.observations\`의 각 항목은 \`observation_id\`/\`behavior\`/\`context\`/\`metadata\`를 가진다.
+
+\`\`\`json
+{
+  "schema_version": "1.0",
+  "diagnostic_meta": {
+    "status": "COMPLETE | PARTIAL | INSUFFICIENT",
+    "access_summary": "",
+    "limitations": []
+  },
+  "type": {
+    "label": null,
+    "signature": {
+      "primary_roles": [],
+      "core_behaviors": [],
+      "derived_patterns": [],
+      "secondary_roles": [],
+      "personal_habits": []
+    },
+    "summary": ""
+  },
+  "roles": [
+    {
+      "role": "",
+      "classification": "PRIMARY_ROLE | SECONDARY_ROLE | NOT_ESTABLISHED",
+      "evidence_ids": [],
+      "confidence": "LOW | MEDIUM | HIGH"
+    }
+  ],
+  "axes": [
+    {
+      "axis_id": "AXIS_01",
+      "axis_name": "CONTEXT_USE",
+      "direction": "",
+      "mode": "STABLE | CONDITIONAL | UNRESOLVED",
+      "confidence": "LOW | MEDIUM | HIGH",
+      "condition_summary": null,
+      "supported_pattern": null,
+      "evidence_ids": [],
+      "counterevidence_ids": [],
+      "unknown_reason": null
+    }
+  ],
+  "personal_habits": [
+    {
+      "habit": "",
+      "category": "",
+      "evidence_ids": [],
+      "confidence": "LOW | MEDIUM | HIGH"
+    }
+  ],
+  "derived_patterns": [
+    {
+      "pattern": "",
+      "source_results": [],
+      "evidence_ids": [],
+      "confidence": "LOW | MEDIUM | HIGH"
+    }
+  ],
+  "attribution": [
+    {
+      "target": "",
+      "attributions": [],
+      "certainty": "LIMITED | MODERATE | STRONG",
+      "reason": ""
+    }
+  ],
+  "evidence": {
+    "observations": [
+      {
+        "observation_id": "OBS_01",
+        "behavior": "",
+        "context": "",
+        "metadata": {}
+      }
+    ]
+  }
+}
+\`\`\`
+
+규칙:
+
+- 이 JSON 코드블록은 반드시 답변의 가장 마지막에 출력해라.
+- 이 JSON 앞뒤로 같은 내용을 반복해서 다시 요약하지 마라.
+- 위 키 이름, 값의 형식(문자열/배열/열거값)을 임의로 바꾸지 마라.`;
+
+  // Plain string concatenation only — see the comment on
+  // ANALYZER_PROMPT_INTRO above for why the 3 pasted responses are never
+  // spliced into a template literal.
+  function buildAnalyzerPrompt(responseA, responseB, responseC) {
+    var sourceSection =
+      "### Probe A — Exploration (탐색)\n" +
+      "질문: " + PROBE_A + "\n\n" +
+      "실제 응답:\n" + responseA + "\n\n" +
+      "### Probe B — Action (행동)\n" +
+      "질문: " + PROBE_B + "\n\n" +
+      "실제 응답:\n" + responseB + "\n\n" +
+      "### Probe C — Reevaluation (재검토)\n" +
+      "질문: " + PROBE_C + "\n\n" +
+      "실제 응답:\n" + responseC;
+
+    return ANALYZER_PROMPT_INTRO + sourceSection + ANALYZER_PROMPT_BODY;
+  }
+
+  // ---- DOM wiring ----
+  var probeTextAEl = document.getElementById("probeTextA");
+  var probeTextBEl = document.getElementById("probeTextB");
+  var probeTextCEl = document.getElementById("probeTextC");
+  if (probeTextAEl) probeTextAEl.textContent = PROBE_A;
+  if (probeTextBEl) probeTextBEl.textContent = PROBE_B;
+  if (probeTextCEl) probeTextCEl.textContent = PROBE_C;
+
+  var probeBetaTeaser = document.getElementById("probeBetaTeaser");
+  var probeBetaStartBtn = document.getElementById("probeBetaStartBtn");
+  var probeBetaFlow = document.getElementById("probeBetaFlow");
+
+  if (probeBetaStartBtn) {
+    probeBetaStartBtn.addEventListener("click", function () {
+      track("probe_beta_start");
+      probeBetaTeaser.hidden = true;
+      probeBetaFlow.hidden = false;
+      probeBetaFlow.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // Small generic status helper — mirrors showParseStatus()'s behavior
+  // (message + success/error class toggle) without touching that
+  // function, which is hardcoded to the main #parseStatus element.
+  function setProbeStatus(el, message, isError) {
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle("parse-status-error", !!isError);
+    el.classList.toggle("parse-status-success", !isError);
+  }
+
+  var PROBE_KEYS = ["A", "B", "C"];
+  var PROBE_QUESTIONS = { A: PROBE_A, B: PROBE_B, C: PROBE_C };
+  var probeResponses = { A: "", B: "", C: "" };
+
+  // Per-probe "질문 복사" buttons (probe_a_copied / probe_b_copied /
+  // probe_c_copied) — same copyToClipboard()/showFeedback() helpers the
+  // main prompt's copy button already uses.
+  PROBE_KEYS.forEach(function (key) {
+    var copyBtn = document.getElementById("probeCopyBtn" + key);
+    var copyFeedback = document.getElementById("probeCopyFeedback" + key);
+    if (!copyBtn) return;
+    copyBtn.addEventListener("click", function () {
+      copyToClipboard(PROBE_QUESTIONS[key]).then(
+        function () {
+          showFeedback(copyFeedback, "복사했습니다 ✓", false);
+          track("probe_" + key.toLowerCase() + "_copied");
+        },
+        function () {
+          showFeedback(copyFeedback, "복사에 실패했어요. 직접 선택해서 복사해주세요.", true);
+        }
+      );
+    });
+  });
+
+  function probeStepEl(key) { return document.getElementById("probeStep" + key); }
+  function probeResponseEl(key) { return document.getElementById("probeResponse" + key); }
+  function probeStatusEl(key) { return document.getElementById("probeStepStatus" + key); }
+
+  function goToProbeStep(key) {
+    PROBE_KEYS.forEach(function (k) {
+      var el = probeStepEl(k);
+      if (el) el.hidden = (k !== key);
+    });
+  }
+
+  // A textarea empty (after trim) blocks advancing — this is the "빈
+  // Response가 있는 상태에서는 Analyzer 단계로 진행할 수 없게 한다" rule.
+  function readProbeResponse(key) {
+    var textarea = probeResponseEl(key);
+    var value = textarea ? textarea.value.trim() : "";
+    var status = probeStatusEl(key);
+    if (!value) {
+      setProbeStatus(status, "AI의 응답을 먼저 붙여넣어 주세요.", true);
+      return null;
+    }
+    setProbeStatus(status, "", false);
+    return value;
+  }
+
+  var probeNextBtnA = document.getElementById("probeNextBtnA");
+  var probeNextBtnB = document.getElementById("probeNextBtnB");
+  var probeGenerateBtn = document.getElementById("probeGenerateBtn");
+
+  if (probeNextBtnA) {
+    probeNextBtnA.addEventListener("click", function () {
+      var value = readProbeResponse("A");
+      if (value === null) return;
+      probeResponses.A = value;
+      goToProbeStep("B");
+    });
+  }
+
+  if (probeNextBtnB) {
+    probeNextBtnB.addEventListener("click", function () {
+      var value = readProbeResponse("B");
+      if (value === null) return;
+      probeResponses.B = value;
+      goToProbeStep("C");
+    });
+  }
+
+  var probeAnalyzerResult = document.getElementById("probeAnalyzerResult");
+  var probeAnalyzerPromptText = document.getElementById("probeAnalyzerPromptText");
+  var probeAnalyzerCopyBtn = document.getElementById("probeAnalyzerCopyBtn");
+  var probeAnalyzerCopyFeedback = document.getElementById("probeAnalyzerCopyFeedback");
+  var probeAnalyzerGuide = document.getElementById("probeAnalyzerGuide");
+
+  if (probeGenerateBtn) {
+    probeGenerateBtn.addEventListener("click", function () {
+      var value = readProbeResponse("C");
+      if (value === null) return;
+      probeResponses.C = value;
+
+      // Defensive re-check: the forward-only step flow already guarantees
+      // A/B were non-empty before reaching this step, but generation
+      // itself never trusts that alone.
+      if (!probeResponses.A || !probeResponses.B) {
+        setProbeStatus(probeStatusEl("C"), "이전 단계의 응답이 비어 있어요. 처음부터 다시 진행해주세요.", true);
+        return;
+      }
+
+      probeAnalyzerPromptText.textContent = buildAnalyzerPrompt(probeResponses.A, probeResponses.B, probeResponses.C);
+      probeAnalyzerResult.hidden = false;
+      probeAnalyzerResult.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  if (probeAnalyzerCopyBtn) {
+    probeAnalyzerCopyBtn.addEventListener("click", function () {
+      copyToClipboard(probeAnalyzerPromptText.textContent).then(
+        function () {
+          showFeedback(probeAnalyzerCopyFeedback, "복사했습니다 ✓ 이제 평소 쓰는 AI에 붙여넣어 실행해주세요.", false);
+          track("analyzer_prompt_copied");
+          if (probeAnalyzerGuide) probeAnalyzerGuide.hidden = false;
+        },
+        function () {
+          showFeedback(probeAnalyzerCopyFeedback, "복사에 실패했어요. 프롬프트를 직접 선택해서 복사해주세요.", true);
+          var details = probeAnalyzerResult.querySelector(".prompt-details");
+          if (details) details.open = true;
+        }
+      );
+    });
+  }
+
+  // Small UX aid only — never touches the existing #resultInput /
+  // #parseBtn logic itself, just scrolls to and focuses it.
+  var probeGoToResultBtn = document.getElementById("probeGoToResultBtn");
+  if (probeGoToResultBtn && resultInput) {
+    probeGoToResultBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      resultInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      resultInput.focus();
+    });
+  }
 })();

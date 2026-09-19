@@ -33,10 +33,39 @@ GitHub Pages, Netlify, Vercel, Cloudflare Pages 등 어떤 정적 호스팅에�
 ## 파일 구조
 
 ```
-index.html   메인 랜딩 페이지 (히어로, 개념 설명, 사용법, 진단 프롬프트, 결과 예시, 공유 폼)
+index.html   메인 랜딩 페이지 (히어로, 개념 설명, 사용법, 진단 프롬프트, Probe Beta, 결과 예시, 공유 폼)
 style.css    모바일 우선 반응형 스타일
-script.js    진단 프롬프트 데이터, 클립보드 복사, 공유 카드 생성 로직
+script.js    진단 프롬프트 데이터, Probe/Analyzer Prompt 데이터, 클립보드 복사, 공유 카드 생성 로직
 ```
+
+## Probe-based Diagnostic Prototype (Beta)
+
+기존 진단(하나의 대형 Diagnostic Prompt)과 별개로, "진단 프롬프트" 섹션
+아래에 실험적인 보조 진입점을 추가했습니다. 하나의 대형 프롬프트 대신
+서로 다른 상황의 짧은 Probe 3개(Exploration / Action / Reevaluation)에
+대한 실제 AI 응답을 모아, 세 응답에서 반복되는 행동을 근거로 분석할 수
+있는지 검증하는 Prototype입니다.
+
+- Probe 질문 3개(`script.js`의 `PROBE_A`/`PROBE_B`/`PROBE_C`, 현재
+  v0.1·실험 문구)를 순서대로 복사해 사용자가 평소 쓰는 AI에 입력하고,
+  그 응답을 매 단계 붙여넣습니다. 세 응답이 모두 있어야 다음 단계로
+  진행됩니다.
+- 세 응답이 모두 모이면 `buildAnalyzerPrompt()`가 별도의 Analyzer
+  Prompt를 생성합니다. 이 Analyzer Prompt는 기존 Diagnostic Prompt와는
+  독립된 텍스트이지만(의도적으로 공유 상수로 리팩터링하지 않음),
+  **요구하는 최종 출력 형식은 기존 Schema 1.0과 완전히 동일**합니다.
+- 생성된 Analyzer Prompt를 복사해 실행한 결과는, 이 페이지의 기존
+  "결과 붙여넣기"(`#resultInput` / `#parseBtn`)에 그대로 붙여넣으면
+  됩니다 — 별도의 파서나 결과 화면을 새로 만들지 않고, 기존
+  parser/normalizer/Result UI/Share Card 파이프라인을 그대로 재사용합니다.
+- Analyzer Prompt는 "Probe가 직접 요구한 행동"과 "AI가 자발적으로 추가한
+  행동"을 구분하도록 명시적으로 요구합니다(Prompt Compliance
+  Exclusion). Probe 질문에 답한 것 자체는 어떤 Axis의 Evidence도 아니며,
+  질문이 요구하지 않은 행동만 Evidence 후보가 됩니다.
+- 아직 API 연동·계정·히스토리는 없습니다. Beta 단계 전용 analytics
+  이벤트(`probe_beta_start`, `probe_a_copied`, `probe_b_copied`,
+  `probe_c_copied`, `analyzer_prompt_copied`)만 기존 `track()` 패턴으로
+  추가되어 있으며, Probe 응답 내용이나 진단 결과는 전송되지 않습니다.
 
 ## Share Card v1 (공유 이미지 정보 구조)
 
@@ -86,3 +115,14 @@ script.js    진단 프롬프트 데이터, 클립보드 복사, 공유 카드 �
 | `result_image_saved` | 결과 카드 PNG 생성·다운로드 성공 시 |
 | `share_text_copied` | "텍스트 복사하기" 클립보드 복사 성공 시 |
 | `share_sheet_opened` | "결과 공유" 클릭으로 Web Share API 호출 시. 브라우저가 실제 전송 완료 여부를 신뢰성 있게 알려주지 않으므로, 공유 시트를 연 것까지만 측정하고 전송 성공 여부는 측정하지 않습니다. |
+
+### Probe-based Diagnostic Prototype (Beta) 이벤트 (메인 퍼널과 독립)
+
+| 이벤트 | 발생 시점 |
+|---|---|
+| `probe_beta_start` | "새로운 진단 방식 체험하기" Beta 진입점의 "체험해보기" 클릭 |
+| `probe_a_copied` / `probe_b_copied` / `probe_c_copied` | 각 Probe 질문 클립보드 복사 **성공** 시 |
+| `analyzer_prompt_copied` | Analyzer Prompt 클립보드 복사 **성공** 시 |
+
+Probe에 붙여넣은 AI 응답이나 생성된 Analyzer Prompt 내용은 어떤 이벤트에도
+포함되지 않습니다.

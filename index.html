@@ -395,6 +395,111 @@
     </div>
   </section>
 
+  <!-- PROBE-BASED DIAGNOSTIC PROTOTYPE (Beta) -->
+  <!-- A second, independent entry point: instead of one large Diagnostic
+       Prompt, the user runs 3 short Probe questions against their own AI
+       and pastes back each response. Once all three are collected, an
+       Analyzer Prompt (buildAnalyzerPrompt in script.js) is generated —
+       its required output is the SAME Schema 1.0 JSON as the main
+       Diagnostic Prompt above, so the result still goes through the
+       existing #resultInput / #parseBtn flow in the SHARE section below,
+       unchanged. This section never replaces the main diagnostic funnel. -->
+  <section class="probe-beta" id="probeBeta">
+    <div class="wrap">
+      <div class="probe-beta-teaser" id="probeBetaTeaser">
+        <p class="probe-beta-badge">Beta</p>
+        <h2>새로운 진단 방식 체험하기</h2>
+        <p class="section-sub">3개의 짧은 질문으로 실제 AI 응답을 비교합니다.</p>
+        <button type="button" id="probeBetaStartBtn" class="btn btn-secondary">체험해보기 →</button>
+      </div>
+
+      <div class="probe-beta-flow" id="probeBetaFlow" hidden>
+        <p class="probe-beta-flow-note">
+          평소 사용하는 AI(ChatGPT 등)를 다른 탭에 열어두고 진행하면 편해요.
+        </p>
+
+        <!-- Step 1/3: Probe A -->
+        <div class="probe-step" id="probeStepA">
+          <p class="probe-step-progress">Step 1 / 3</p>
+          <h3 class="probe-step-title">탐색 상황 (Exploration)</h3>
+          <div class="prompt-box">
+            <pre id="probeTextA" class="prompt-pre"></pre>
+          </div>
+          <button type="button" id="probeCopyBtnA" class="btn btn-secondary btn-copy">
+            <span class="copy-icon" aria-hidden="true">⧉</span>질문 복사
+          </button>
+          <p id="probeCopyFeedbackA" class="copy-feedback" role="status" aria-live="polite"></p>
+
+          <label for="probeResponseA">이 질문을 평소 쓰는 AI에 입력하고, 그 응답을 그대로 붙여넣어 주세요.</label>
+          <textarea id="probeResponseA" rows="7" placeholder="AI의 응답을 여기에 붙여넣어 주세요."></textarea>
+          <p id="probeStepStatusA" class="parse-status" role="status" aria-live="polite"></p>
+          <button type="button" id="probeNextBtnA" class="btn btn-primary btn-large">다음</button>
+        </div>
+
+        <!-- Step 2/3: Probe B -->
+        <div class="probe-step" id="probeStepB" hidden>
+          <p class="probe-step-progress">Step 2 / 3</p>
+          <h3 class="probe-step-title">행동 상황 (Action)</h3>
+          <div class="prompt-box">
+            <pre id="probeTextB" class="prompt-pre"></pre>
+          </div>
+          <button type="button" id="probeCopyBtnB" class="btn btn-secondary btn-copy">
+            <span class="copy-icon" aria-hidden="true">⧉</span>질문 복사
+          </button>
+          <p id="probeCopyFeedbackB" class="copy-feedback" role="status" aria-live="polite"></p>
+
+          <label for="probeResponseB">이 질문을 평소 쓰는 AI에 입력하고, 그 응답을 그대로 붙여넣어 주세요.</label>
+          <textarea id="probeResponseB" rows="7" placeholder="AI의 응답을 여기에 붙여넣어 주세요."></textarea>
+          <p id="probeStepStatusB" class="parse-status" role="status" aria-live="polite"></p>
+          <button type="button" id="probeNextBtnB" class="btn btn-primary btn-large">다음</button>
+        </div>
+
+        <!-- Step 3/3: Probe C -->
+        <div class="probe-step" id="probeStepC" hidden>
+          <p class="probe-step-progress">Step 3 / 3</p>
+          <h3 class="probe-step-title">재검토 상황 (Reevaluation)</h3>
+          <div class="prompt-box">
+            <pre id="probeTextC" class="prompt-pre"></pre>
+          </div>
+          <button type="button" id="probeCopyBtnC" class="btn btn-secondary btn-copy">
+            <span class="copy-icon" aria-hidden="true">⧉</span>질문 복사
+          </button>
+          <p id="probeCopyFeedbackC" class="copy-feedback" role="status" aria-live="polite"></p>
+
+          <label for="probeResponseC">이 질문을 평소 쓰는 AI에 입력하고, 그 응답을 그대로 붙여넣어 주세요.</label>
+          <textarea id="probeResponseC" rows="7" placeholder="AI의 응답을 여기에 붙여넣어 주세요."></textarea>
+          <p id="probeStepStatusC" class="parse-status" role="status" aria-live="polite"></p>
+          <button type="button" id="probeGenerateBtn" class="btn btn-primary btn-large">Analyzer Prompt 만들기</button>
+        </div>
+
+        <!-- Analyzer Prompt result -->
+        <div class="probe-analyzer-result" id="probeAnalyzerResult" hidden>
+          <h3 class="probe-step-title">Analyzer Prompt</h3>
+          <p class="section-sub">이 텍스트 전체를 복사해서 방금 그 AI에 붙여넣고 실행하세요.</p>
+          <div class="prompt-box">
+            <details class="prompt-details">
+              <summary>Analyzer Prompt 전체 보기 / 접기</summary>
+              <pre id="probeAnalyzerPromptText" class="prompt-pre"></pre>
+            </details>
+          </div>
+          <button type="button" id="probeAnalyzerCopyBtn" class="btn btn-primary btn-large btn-copy">
+            <span class="copy-icon" aria-hidden="true">⧉</span>Analyzer Prompt 복사하기
+          </button>
+          <p id="probeAnalyzerCopyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+
+          <div class="probe-analyzer-guide" id="probeAnalyzerGuide" hidden>
+            <p>
+              복사한 프롬프트를 실행한 뒤, 그 응답 전체를 아래 "결과 공유하기"의
+              결과 붙여넣기 칸에 붙여넣고 <strong>내 결과 카드 만들기</strong>를 눌러주세요.
+              이후 과정은 기존 진단 결과와 동일하게 진행됩니다.
+            </p>
+            <a href="#resultInput" id="probeGoToResultBtn" class="btn btn-secondary">결과 입력으로 이동 ↓</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- EXAMPLE RESULTS -->
   <section class="examples">
     <div class="wrap">
@@ -551,6 +656,6 @@
 
 <!-- Bump ?v= on every script.js change so browsers/CDN don't serve a
      stale cached copy after a redeploy (GitHub Pages assets are cached). -->
-<script src="script.js?v=10"></script>
+<script src="script.js?v=11"></script>
 </body>
 </html>
