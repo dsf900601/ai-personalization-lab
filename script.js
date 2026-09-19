@@ -2586,12 +2586,14 @@ Output 규칙:
     });
   }
 
-  // ---------- Probe-based Diagnostic Prototype (Beta) ----------
+  // ---------- Probe-based Diagnostic Entry (Beta) ----------
   //
-  // A second, independent entry point. Instead of running one large
-  // DIAGNOSTIC_PROMPT, the user runs 3 short Probe questions against
-  // their own AI and pastes each response here. Once all three are
-  // collected, buildAnalyzerPrompt() assembles a separate Analyzer
+  // This is now the site's primary/only user-facing diagnosis entry
+  // point — the long-prompt UI (#promptText/#copyBtn, wired further up
+  // this file) has been removed from index.html. Instead of running one
+  // large DIAGNOSTIC_PROMPT, the user runs 3 short Probe questions
+  // against their own AI and pastes each response here. Once all three
+  // are collected, buildAnalyzerPrompt() assembles a separate Analyzer
   // Prompt whose REQUIRED output is the same Schema 1.0 JSON as
   // DIAGNOSTIC_PROMPT — so its result is pasted into the existing
   // #resultInput / #parseBtn flow above and goes through
@@ -2599,6 +2601,11 @@ Output 규칙:
   // buildCardSVGv1 completely unchanged. This block never modifies
   // DIAGNOSTIC_PROMPT, the parser/normalizer, or the Result UI — see
   // the compatibility notes on buildAnalyzerPrompt() below.
+  //
+  // DIAGNOSTIC_PROMPT itself (and its #promptText/#copyBtn wiring above)
+  // is intentionally left in place even though nothing in the current
+  // page links to it: it's the rollback/reference path until the Probe
+  // method is validated, not dead code to clean up.
   //
   // Per design decision (F1): DIAGNOSTIC_PROMPT is not refactored or
   // decomposed into shared constants for this prototype, even though

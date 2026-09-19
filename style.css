@@ -349,12 +349,12 @@ section h2 {
 .step h3 { font-size: 1.02rem; margin-bottom: 4px; color: var(--text-primary); }
 .step p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
 
-/* ---------- Diagnostic prompt ---------- */
-.diagnose {
-  background: var(--bg-surface);
-  border-top: 1px solid var(--line-soft);
-  border-bottom: 1px solid var(--line-soft);
-}
+/* ---------- Prompt display (shared: Probe questions, Analyzer Prompt) ---------- */
+/* Was originally written for the long DIAGNOSTIC_PROMPT's own section
+   (.diagnose), which has been removed from the page — .probe-beta now
+   supplies the equivalent section background/border. These box/pre/
+   details styles are unchanged and still used by the Probe steps and
+   the generated Analyzer Prompt display below. */
 .prompt-box {
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
@@ -857,8 +857,9 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 }
 .glyph-dot { fill: currentColor; stroke: none; }
 
-/* ---------- Probe-based Diagnostic Prototype (Beta) ---------- */
-/* A second, independent entry point next to the main Diagnostic Prompt —
+/* ---------- Probe-based Diagnostic Entry (Beta) ---------- */
+/* The site's primary diagnosis entry point (formerly a secondary add-on
+   below the long Diagnostic Prompt UI, which has since been removed) —
    reuses existing tokens/components (.btn, .prompt-box, .prompt-pre,
    .copy-feedback, .parse-status, .section-sub) instead of introducing a
    new color system. Mobile-first like the rest of the page: base rules
@@ -870,6 +871,11 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   border-bottom: 1px solid var(--line-soft);
 }
 .probe-beta-teaser { text-align: center; }
+.probe-beta-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
 .probe-beta-badge {
   display: inline-block;
   font-size: 0.72rem;

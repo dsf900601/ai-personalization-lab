@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MY AI TYPE — 내 ChatGPT는 어떤 AI가 됐을까?</title>
-<meta name="description" content="당신과 오래 대화한 ChatGPT는 어떤 유형의 AI로 개인화되어 있을까요? 진단 프롬프트를 복사해서 직접 확인해보세요. 무료, 로그인 없음, 대화 수집 없음.">
+<meta name="description" content="당신과 오래 대화한 ChatGPT는 어떤 유형의 AI로 개인화되어 있을까요? 짧은 질문 3개로 실제 응답을 비교해 확인해보세요. 무료, 로그인 없음, 대화 수집 없음.">
 <meta property="og:title" content="내 ChatGPT는 나랑 대화하면서 어떤 AI가 됐을까?">
 <meta property="og:description" content="당신의 성격 테스트가 아닙니다. 당신과 오래 대화한 ChatGPT의 행동 유형을 진단해보는 실험입니다.">
 <meta property="og:type" content="website">
@@ -336,9 +336,8 @@
       <div class="callout">
         <p>
           <strong>이 테스트는 과학적으로 검증된 심리검사가 아닙니다.</strong><br>
-          ChatGPT가 접근 가능한 대화 맥락, 저장된 정보, 사용자 설정 및
-          현재 나타나는 응답 행동을 바탕으로 스스로 분석하게 하는
-          탐색적 진단입니다.
+          짧은 질문 몇 개에 ChatGPT가 실제로 어떻게 응답하는지 관찰하고,
+          그 응답 행동을 바탕으로 분석하게 하는 탐색적 진단입니다.
         </p>
       </div>
     </div>
@@ -352,65 +351,54 @@
         <li class="step">
           <span class="step-num">1</span>
           <div>
-            <h3>진단 프롬프트를 복사하세요</h3>
-            <p>아래에 준비된 프롬프트를 그대로 복사합니다.</p>
+            <h3>짧은 질문 3개에 답해보세요</h3>
+            <p>서로 다른 상황의 질문 3개를 평소 쓰는 ChatGPT에 하나씩 물어보고, 그 응답을 확인합니다.</p>
           </div>
         </li>
         <li class="step">
           <span class="step-num">2</span>
           <div>
-            <h3>평소 쓰던 ChatGPT에 붙여넣으세요</h3>
-            <p>가능하면 오래 사용해온 계정·환경에서 실행해야 정확도가 높아집니다.</p>
+            <h3>Analyzer Prompt를 실행하세요</h3>
+            <p>세 응답을 바탕으로 자동 생성된 Analyzer Prompt를 같은 ChatGPT에 붙여넣습니다.</p>
           </div>
         </li>
         <li class="step">
           <span class="step-num">3</span>
           <div>
             <h3>결과를 확인하고 비교해보세요</h3>
-            <p>내 ChatGPT의 유형을 확인하고, 다른 사람의 결과와 비교해보세요.</p>
+            <p>Analyzer의 답변을 붙여넣으면 결과 카드가 만들어집니다. 다른 사람의 결과와 비교해보세요.</p>
           </div>
         </li>
       </ol>
     </div>
   </section>
 
-  <!-- DIAGNOSTIC PROMPT -->
-  <section class="diagnose" id="diagnose">
-    <div class="wrap">
-      <h2>진단 프롬프트</h2>
-      <p class="section-sub">이 텍스트 전체를 복사해서 ChatGPT에 붙여넣으세요.</p>
-
-      <div class="prompt-box">
-        <details class="prompt-details">
-          <summary>프롬프트 전체 보기 / 접기</summary>
-          <pre id="promptText" class="prompt-pre"></pre>
-        </details>
-      </div>
-
-      <button id="copyBtn" class="btn btn-primary btn-large btn-copy" type="button">
-        <span class="copy-icon" aria-hidden="true">⧉</span>
-        프롬프트 복사하기
-      </button>
-      <p id="copyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
-    </div>
-  </section>
-
-  <!-- PROBE-BASED DIAGNOSTIC PROTOTYPE (Beta) -->
-  <!-- A second, independent entry point: instead of one large Diagnostic
-       Prompt, the user runs 3 short Probe questions against their own AI
-       and pastes back each response. Once all three are collected, an
+  <!-- PROBE-BASED DIAGNOSTIC ENTRY (Beta) -->
+  <!-- This is now the site's primary/only visible diagnosis entry point:
+       the user runs 3 short Probe questions against their own AI and
+       pastes back each response. Once all three are collected, an
        Analyzer Prompt (buildAnalyzerPrompt in script.js) is generated —
-       its required output is the SAME Schema 1.0 JSON as the main
-       Diagnostic Prompt above, so the result still goes through the
-       existing #resultInput / #parseBtn flow in the SHARE section below,
-       unchanged. This section never replaces the main diagnostic funnel. -->
-  <section class="probe-beta" id="probeBeta">
+       its required output is the SAME Schema 1.0 JSON the retired long
+       DIAGNOSTIC_PROMPT also targets, so the result still goes through
+       the existing #resultInput / #parseBtn flow in the SHARE section
+       below, unchanged. The old long-prompt UI (#promptText/#copyBtn)
+       has been removed from this page, but DIAGNOSTIC_PROMPT and its
+       parser/normalizer/Result UI/Share Card in script.js are all still
+       intact and untouched — kept for compatibility and as a rollback/
+       reference path until the Probe method is validated. This section
+       keeps id="diagnose" so the Hero's "내 AI 관찰하기" CTA still
+       resolves to the actual diagnosis entry point. -->
+  <section class="probe-beta" id="diagnose">
     <div class="wrap">
       <div class="probe-beta-teaser" id="probeBetaTeaser">
         <p class="probe-beta-badge">Beta</p>
-        <h2>새로운 진단 방식 체험하기</h2>
-        <p class="section-sub">3개의 짧은 질문으로 실제 AI 응답을 비교합니다.</p>
-        <button type="button" id="probeBetaStartBtn" class="btn btn-secondary">체험해보기 →</button>
+        <h2>내 ChatGPT 관찰하기</h2>
+        <p class="section-sub">
+          서로 다른 상황의 짧은 질문 3개에 대한 실제 응답을 모아,<br class="mobile-only">
+          ChatGPT가 어떤 방식으로 개인화되어 있는지 관찰합니다.
+        </p>
+        <button type="button" id="probeBetaStartBtn" class="btn btn-primary btn-large">진단 시작하기 →</button>
+        <p class="probe-beta-note">아직 검증 중인 진단 방식이에요. 결과는 참고용으로 봐주세요.</p>
       </div>
 
       <div class="probe-beta-flow" id="probeBetaFlow" hidden>
