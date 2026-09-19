@@ -321,29 +321,78 @@
     </div>
   </section>
 
-  <!-- CONCEPT -->
-  <section class="concept">
+  <!-- AI EXPERIENCE (MVP v0.1) -->
+  <!-- Independent from the diagnostic system below: Experience state
+       (id -> TRIED/WANT, in localStorage under its own namespaced key)
+       is never read by the Analyzer Prompt, the Schema 1.0 parser/
+       normalizer, Axis/Role/Habit/Derived-Pattern logic, the Type
+       Confidence Gate, or the Share Card — and no diagnostic result
+       ever writes Experience state. This is not a diagnosis: it's a
+       discover/record/revisit loop, connected to the diagnosis flow
+       only via the plain link at the bottom of the Collection view.
+       Placed ahead of Diagnosis (not after it) — an entry/discovery
+       layer users can move through into "so how has my ChatGPT's
+       behavior changed along the way?", not a post-diagnosis add-on.
+       Not a forced funnel: the Hero's "내 AI 관찰하기" CTA still jumps
+       straight to #diagnose regardless of this section's position. -->
+  <section class="experience" id="experience">
     <div class="wrap">
-      <h2>이게 무슨 테스트인가요?</h2>
-      <p>
-        같은 ChatGPT라도 누구와 오래 대화했느냐에 따라<br>
-        나타나는 행동은 달라질 수 있습니다.
-      </p>
-      <p>
-        검색 도구처럼 쓰든, 비서처럼 쓰든, 아이디어 파트너처럼 쓰든 —<br>
-        그렇게 쌓인 대화에 따라 ChatGPT가 지금 나에게<br class="mobile-only">
-        반응하는 방식도 조금씩 달라져 있습니다.
-      </p>
-      <p>
-        MY AI TYPE은 그렇게 만들어진 지금의 ChatGPT가<br>
-        어떤 행동적 역할을 보이는지 직접 확인해보는 실험입니다.
-      </p>
-      <div class="callout">
-        <p>
-          <strong>이 테스트는 과학적으로 검증된 심리검사가 아닙니다.</strong><br>
-          짧은 질문 몇 개에 ChatGPT가 실제로 어떻게 응답하는지 관찰하고,
-          그 응답 행동을 바탕으로 분석하게 하는 탐색적 진단입니다.
-        </p>
+      <div class="experience-discovery" id="experienceDiscovery">
+        <div class="experience-intro">
+          <p class="experience-eyebrow">
+            <svg class="experience-eyebrow-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-search"/></svg>
+            AI EXPERIENCE
+          </p>
+          <h2 class="experience-heading">AI로 어디까지<br>해봤어요?</h2>
+          <p class="experience-lead">
+            AI에게 시켜본 일을 하나씩 발견하고<br class="mobile-only">
+            내 경험 도감을 만들어보세요.
+          </p>
+        </div>
+
+        <div class="experience-card" id="experienceCard">
+          <p class="experience-card-text" id="experienceCardText"></p>
+          <div class="experience-card-actions">
+            <button type="button" id="experienceTriedBtn" class="experience-status-btn">해봤어요</button>
+            <button type="button" id="experienceWantBtn" class="experience-status-btn">해보고 싶어요</button>
+          </div>
+        </div>
+
+        <button type="button" id="experienceNextBtn" class="experience-next-link">다른 경험 →</button>
+
+        <div class="experience-progress">
+          <p class="experience-progress-text" id="experienceProgressText"></p>
+          <button type="button" id="experienceCollectionBtn" class="experience-collection-entry">내 경험 도감 보기 →</button>
+        </div>
+      </div>
+
+      <div class="experience-collection" id="experienceCollection" hidden>
+        <div class="experience-collection-summary">
+          <span>해봤어요 <strong id="experienceCountTried">0</strong></span>
+          <span>해보고 싶어요 <strong id="experienceCountWant">0</strong></span>
+          <span>아직 <strong id="experienceCountNone">0</strong></span>
+        </div>
+
+        <div class="experience-collection-filters">
+          <button type="button" class="experience-filter-btn is-active" data-filter="ALL">전체</button>
+          <button type="button" class="experience-filter-btn" data-filter="TRIED">해봤어요</button>
+          <button type="button" class="experience-filter-btn" data-filter="WANT">해보고 싶어요</button>
+          <button type="button" class="experience-filter-btn" data-filter="NONE">아직</button>
+        </div>
+
+        <ul class="experience-collection-list" id="experienceCollectionList"></ul>
+
+        <button type="button" id="experienceBackToDiscoveryBtn" class="btn-link">발견하기로 돌아가기</button>
+
+        <div class="experience-diagnosis-link">
+          <p>
+            AI와 해본 일은 계속 늘어납니다.<br><br>
+            그 과정에서<br>
+            당신의 ChatGPT가 보이는 행동도<br>
+            달라졌을까요?
+          </p>
+          <a href="#diagnose" class="btn btn-secondary">내 AI 관찰하기 →</a>
+        </div>
       </div>
     </div>
   </section>
@@ -594,73 +643,33 @@
     </div>
   </section>
 
-  <!-- AI EXPERIENCE (MVP v0.1) -->
-  <!-- Independent from the diagnostic system above: Experience state
-       (id -> TRIED/WANT, in localStorage under its own namespaced key)
-       is never read by the Analyzer Prompt, the Schema 1.0 parser/
-       normalizer, Axis/Role/Habit/Derived-Pattern logic, the Type
-       Confidence Gate, or the Share Card — and no diagnostic result
-       ever writes Experience state. This is not a diagnosis: it's a
-       discover/record/revisit loop, connected to the diagnosis flow
-       only via the plain link at the bottom of the Collection view. -->
-  <section class="experience" id="experience">
+  <!-- CONCEPT -->
+  <!-- Moved after Diagnosis: supporting information (what this is, its
+       limits, why to trust it) rather than a pre-diagnosis explainer
+       that interrupts Hero -> Experience -> Diagnosis. Block and copy
+       unchanged from its previous position. -->
+  <section class="concept">
     <div class="wrap">
-      <div class="experience-discovery" id="experienceDiscovery">
-        <div class="experience-intro">
-          <p class="experience-eyebrow">
-            <svg class="experience-eyebrow-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-search"/></svg>
-            AI EXPERIENCE
-          </p>
-          <h2 class="experience-heading">AI로 어디까지<br>해봤어요?</h2>
-          <p class="experience-lead">
-            AI에게 시켜본 일을 하나씩 발견하고<br class="mobile-only">
-            내 경험 도감을 만들어보세요.
-          </p>
-        </div>
-
-        <div class="experience-card" id="experienceCard">
-          <p class="experience-card-text" id="experienceCardText"></p>
-          <div class="experience-card-actions">
-            <button type="button" id="experienceTriedBtn" class="experience-status-btn">해봤어요</button>
-            <button type="button" id="experienceWantBtn" class="experience-status-btn">해보고 싶어요</button>
-          </div>
-        </div>
-
-        <button type="button" id="experienceNextBtn" class="experience-next-link">다른 경험 →</button>
-
-        <div class="experience-progress">
-          <p class="experience-progress-text" id="experienceProgressText"></p>
-          <button type="button" id="experienceCollectionBtn" class="experience-collection-entry">내 경험 도감 보기 →</button>
-        </div>
-      </div>
-
-      <div class="experience-collection" id="experienceCollection" hidden>
-        <div class="experience-collection-summary">
-          <span>해봤어요 <strong id="experienceCountTried">0</strong></span>
-          <span>해보고 싶어요 <strong id="experienceCountWant">0</strong></span>
-          <span>아직 <strong id="experienceCountNone">0</strong></span>
-        </div>
-
-        <div class="experience-collection-filters">
-          <button type="button" class="experience-filter-btn is-active" data-filter="ALL">전체</button>
-          <button type="button" class="experience-filter-btn" data-filter="TRIED">해봤어요</button>
-          <button type="button" class="experience-filter-btn" data-filter="WANT">해보고 싶어요</button>
-          <button type="button" class="experience-filter-btn" data-filter="NONE">아직</button>
-        </div>
-
-        <ul class="experience-collection-list" id="experienceCollectionList"></ul>
-
-        <button type="button" id="experienceBackToDiscoveryBtn" class="btn-link">발견하기로 돌아가기</button>
-
-        <div class="experience-diagnosis-link">
-          <p>
-            AI와 해본 일은 계속 늘어납니다.<br><br>
-            그 과정에서<br>
-            당신의 ChatGPT가 보이는 행동도<br>
-            달라졌을까요?
-          </p>
-          <a href="#diagnose" class="btn btn-secondary">내 AI 관찰하기 →</a>
-        </div>
+      <h2>이게 무슨 테스트인가요?</h2>
+      <p>
+        같은 ChatGPT라도 누구와 오래 대화했느냐에 따라<br>
+        나타나는 행동은 달라질 수 있습니다.
+      </p>
+      <p>
+        검색 도구처럼 쓰든, 비서처럼 쓰든, 아이디어 파트너처럼 쓰든 —<br>
+        그렇게 쌓인 대화에 따라 ChatGPT가 지금 나에게<br class="mobile-only">
+        반응하는 방식도 조금씩 달라져 있습니다.
+      </p>
+      <p>
+        MY AI TYPE은 그렇게 만들어진 지금의 ChatGPT가<br>
+        어떤 행동적 역할을 보이는지 직접 확인해보는 실험입니다.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>이 테스트는 과학적으로 검증된 심리검사가 아닙니다.</strong><br>
+          짧은 질문 몇 개에 ChatGPT가 실제로 어떻게 응답하는지 관찰하고,
+          그 응답 행동을 바탕으로 분석하게 하는 탐색적 진단입니다.
+        </p>
       </div>
     </div>
   </section>

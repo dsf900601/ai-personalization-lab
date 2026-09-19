@@ -976,59 +976,62 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .experience {
   background: var(--bg-surface);
   border-top: 1px solid var(--line-soft);
-  padding: 64px 0 96px;
+  padding: 48px 0 64px;
 }
 
 .experience-intro {
   text-align: center;
   max-width: 480px;
-  margin: 0 auto 44px;
+  margin: 0 auto 28px;
 }
 .experience-eyebrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   font-family: var(--mono);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin: 0 0 16px;
+  margin: 0 0 10px;
 }
-.experience-eyebrow-glyph { width: 15px; height: 15px; color: var(--nacre-cyan); }
+/* Deliberately small and subordinate to the heading below it — a label
+   mark, never a hero-scale decoration. */
+.experience-eyebrow-glyph { width: 13px; height: 13px; flex: none; color: var(--nacre-cyan); }
 .experience-heading {
-  font-size: 1.55rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  line-height: 1.32;
-  letter-spacing: -0.005em;
+  line-height: 1.28;
+  letter-spacing: -0.008em;
   color: var(--text-primary);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 .experience-lead {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   line-height: 1.6;
   margin: 0;
 }
 
 /* The card is the section's visual anchor — deliberately sized closer
-   to a reading-width block than a small floating widget. */
+   to a reading-width block than a small floating widget. Its own text
+   is the first and largest thing read inside it. */
 .experience-card {
   background: var(--bg-surface-2);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 36px 26px;
+  padding: 40px 28px;
   text-align: center;
   max-width: 560px;
-  margin: 0 auto 18px;
+  margin: 0 auto 14px;
 }
 .experience-card-text {
-  font-size: 1.22rem;
-  font-weight: 500;
-  line-height: 1.55;
+  font-size: 1.32rem;
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--text-primary);
-  margin: 0 0 30px;
+  margin: 0 0 28px;
 }
 .experience-card-actions {
   display: flex;
@@ -1037,17 +1040,22 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   gap: 12px;
 }
 
+/* Filled resting state (not just an outline) so these read as buttons
+   to press, not as an input/form-field outline. */
 .experience-status-btn {
   display: inline-block;
   flex: 1 1 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 14px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 12px;
+  padding: 15px 18px;
+  font-size: 0.96rem;
+  font-weight: 700;
   font-family: inherit;
   color: var(--text-primary);
-  background: transparent;
+  background: var(--bg-deep);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
@@ -1065,17 +1073,26 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   cursor: not-allowed;
 }
 
-/* "다른 경험 →" — deliberately a plain text control, lighter than the
-   card's own TRIED/WANT actions above it. */
+/* "다른 경험 →" — brand-typography text navigation (underline + accent
+   on interaction), deliberately lighter than the card's own TRIED/WANT
+   actions above it, but unmistakably a designed link rather than an
+   unstyled default control. */
 .experience-next-link {
   display: block;
-  margin: 0 auto 40px;
+  width: fit-content;
+  margin: 0 auto 24px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   border: none;
   background: none;
   font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
   padding: 6px;
 }
@@ -1083,11 +1100,12 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 /* Quiet collection-status readout ("N개 해봤어요 · N개 저장") — plain
    text, no XP/level/rank framing — plus the Collection entry, styled as
-   a clear tertiary nav control (an outlined pill), not a buried
-   underline and not a Primary-CTA-weight filled button. */
+   a small branded chip (mono label treatment, like the section's own
+   eyebrow) so it reads as designed navigation, not a buried underline
+   and not a Primary-CTA-weight filled button. */
 .experience-progress {
   text-align: center;
-  padding-top: 28px;
+  padding-top: 20px;
   border-top: 1px dashed var(--line);
   max-width: 400px;
   margin: 0 auto;
@@ -1099,12 +1117,16 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 }
 .experience-collection-entry {
   display: inline-block;
-  border: 1px solid var(--line);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid rgba(103, 198, 200, 0.35);
   border-radius: 999px;
   padding: 9px 20px;
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   color: var(--text-primary);
   background: transparent;
   cursor: pointer;
@@ -1120,6 +1142,9 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .btn-link {
   display: block;
   margin: 0 auto;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -1155,6 +1180,9 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   margin-bottom: 20px;
 }
 .experience-filter-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 6px 14px;
@@ -1224,10 +1252,13 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   .mobile-only { display: none; }
   section { padding: 64px 0; }
   section h2 { font-size: 1.55rem; }
-  .experience { padding: 84px 0 128px; }
-  .experience-heading { font-size: 1.9rem; }
-  .experience-card { padding: 48px 44px; }
-  .experience-card-text { font-size: 1.4rem; }
+  .experience { padding: 64px 0 88px; }
+  .experience-intro { max-width: 580px; margin-bottom: 36px; }
+  .experience-heading { font-size: 2.4rem; }
+  .experience-lead { font-size: 1.1rem; }
+  .experience-card { padding: 56px 56px; margin-bottom: 20px; }
+  .experience-card-text { font-size: 1.75rem; margin-bottom: 34px; }
+  .experience-status-btn { flex: 1 1 170px; padding: 16px 22px; font-size: 1rem; }
 }
 
 /* ---------- Reduced motion ---------- */
