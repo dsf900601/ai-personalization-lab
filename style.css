@@ -1157,6 +1157,30 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 }
 .btn-link:hover, .btn-link:focus-visible { color: var(--text-primary); }
 
+/* Minimal page identity for the Collection view — just enough that
+   switching from Discovery reads as "I'm now on a different screen",
+   not a redesign. Deliberately compact (smaller than the Discovery
+   heading): Collection is a detail/management view meant to be scanned
+   quickly, not a second hero moment. */
+.experience-collection-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.experience-collection-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+.experience-collection-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
 .experience-collection-summary {
   display: flex;
   justify-content: center;
@@ -1259,6 +1283,7 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   .experience-card { padding: 56px 56px; margin-bottom: 20px; }
   .experience-card-text { font-size: 1.75rem; margin-bottom: 34px; }
   .experience-status-btn { flex: 1 1 170px; padding: 16px 22px; font-size: 1rem; }
+  .experience-collection-title { font-size: 1.5rem; }
 }
 
 /* ---------- Reduced motion ---------- */
