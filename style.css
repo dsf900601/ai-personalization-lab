@@ -230,6 +230,19 @@ button { font-family: inherit; }
   font-size: 1rem;
   margin-bottom: 30px;
 }
+/* Secondary action — deliberately quiet (text link, no border/fill) so
+   it never competes with the Primary CTA above it for weight. */
+.hero-secondary-link {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.hero-secondary-link:hover, .hero-secondary-link:focus-visible {
+  color: var(--text-primary);
+}
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -945,6 +958,175 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   margin: 0;
   text-align: left;
 }
+
+/* ---------- AI Experience (MVP v0.1) ---------- */
+/* Independent product surface from the diagnostic sections above — see
+   the HTML comment on #experience. Deliberately reuses the same tokens
+   (bg-surface/bg-surface-2, line, nacre-cyan, pearl-bright) rather than
+   a new palette, but its card is a plain solid-fill box (no gradient,
+   no crest) so it never reads as a diagnostic Result Card. No score/
+   level/XP visuals anywhere in this block. */
+.experience {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--line-soft);
+}
+.experience .section-sub { text-align: center; margin-bottom: 18px; }
+
+.experience-card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 28px 22px;
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto 20px;
+}
+.experience-card-text {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0 0 22px;
+}
+.experience-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.experience-status-btn {
+  display: inline-block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.experience-status-btn:hover, .experience-status-btn:focus-visible {
+  border-color: var(--nacre-cyan);
+  background: rgba(114, 213, 208, 0.06);
+}
+.experience-status-btn.is-active {
+  background: var(--pearl-bright);
+  color: var(--ink-on-pearl);
+  border-color: var(--pearl-bright);
+}
+.experience-status-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.experience-discovery > .btn-secondary {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 14px;
+}
+
+/* Shared subtle text-button, used for view switches ("내 경험 도감 보기",
+   "발견하기로 돌아가기") that shouldn't carry Primary/Secondary CTA weight. */
+.btn-link {
+  display: block;
+  margin: 0 auto;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding: 6px;
+}
+.btn-link:hover, .btn-link:focus-visible { color: var(--text-primary); }
+
+.experience-collection-summary {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.experience-collection-summary strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-left: 4px;
+}
+
+.experience-collection-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.experience-filter-btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.experience-filter-btn.is-active {
+  border-color: var(--nacre-cyan);
+  color: var(--text-primary);
+  background: rgba(114, 213, 208, 0.08);
+}
+
+.experience-collection-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 0;
+}
+.experience-collection-item {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.experience-collection-item-text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.experience-collection-item-actions {
+  display: flex;
+  gap: 8px;
+}
+.experience-status-btn-sm {
+  flex: 1 1 auto;
+  width: auto;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.experience-diagnosis-link {
+  border-top: 1px dashed var(--line);
+  padding-top: 20px;
+  margin-top: 8px;
+  text-align: center;
+}
+.experience-diagnosis-link p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+.experience-diagnosis-link .btn { display: inline-block; width: auto; }
 
 /* ---------- Larger screens ---------- */
 @media (min-width: 700px) {

@@ -3164,4 +3164,325 @@ Output 규칙:
       resultInput.focus();
     });
   }
+
+  // ---------- AI Experience (MVP v0.1) ----------
+  //
+  // A separate product loop, not a diagnosis: discover / record / revisit
+  // things the user has tried (or wants to try) doing with an AI.
+  // Strict compatibility boundary (do not weaken this without re-reading
+  // the product spec this was built against):
+  //   - Experience Data (id -> TRIED/WANT status) is never read by
+  //     DIAGNOSTIC_PROMPT, PROBE_A/B/C, buildAnalyzerPrompt,
+  //     findSchemaV1Json/validateSchemaV1/normalizeSchemaV1, Axis
+  //     semantics, Role/Habit/Derived Pattern logic, the Type
+  //     Confidence Gate (hasSupportedSignal), Result UI, buildCardSVGv1,
+  //     or legacy [SHARE_RESULT] parsing.
+  //   - Diagnostic results never write to, or otherwise change,
+  //     Experience state. The only link between the two systems is a
+  //     plain UI anchor (the Collection view's bottom CTA scrolls to the
+  //     existing #diagnose entry point) — never a data or scoring path.
+  //   - No recommendation algorithm, no user profiling, no score/level/
+  //     XP, no Experience -> Axis/Role/Type mapping.
+
+  // Experience Database v0.1 — id/text/interaction only. `interaction`
+  // is internal metadata (kept for future use) and is never rendered.
+  var EXPERIENCES = [
+    { id: "exp_01", text: "냉장고에 있는 재료를 알려주고 먹을 메뉴를 추천받아봤다", interaction: "DECIDE" },
+    { id: "exp_02", text: "상황을 설명하고 카톡이나 메시지 답장을 같이 만들어봤다", interaction: "CREATE" },
+    { id: "exp_03", text: "외국어 문장을 번역하거나 자연스럽게 고쳐봤다", interaction: "CREATE" },
+    { id: "exp_04", text: "사진을 보여주고 무엇인지 물어봤다", interaction: "DISCOVER" },
+    { id: "exp_05", text: "여행 조건을 알려주고 실제 여행 일정을 짜봤다", interaction: "ACT" },
+    { id: "exp_06", text: "살 물건 여러 개를 비교해서 선택을 도와달라고 해봤다", interaction: "DECIDE" },
+    { id: "exp_07", text: "운동·공부·생활 같은 루틴을 AI와 짜봤다", interaction: "ACT" },
+    { id: "exp_08", text: "특별한 목적 없이 AI와 한참 잡담해봤다", interaction: "THINK" },
+    { id: "exp_09", text: "이해 안 되는 내용을 이해할 때까지 다시 설명시켜봤다", interaction: "DISCOVER" },
+    { id: "exp_10", text: "긴 문서나 자료를 주고 핵심만 정리시켜봤다", interaction: "ANALYZE" },
+    { id: "exp_11", text: "처음 접하는 주제를 AI와 처음부터 공부해봤다", interaction: "DISCOVER" },
+    { id: "exp_12", text: "공부한 내용을 바탕으로 문제나 퀴즈를 만들어봤다", interaction: "CREATE" },
+    { id: "exp_13", text: "AI를 상대로 외국어·면접·발표 등을 연습해봤다", interaction: "ACT" },
+    { id: "exp_14", text: "이메일이나 업무용 문서를 작성시켜봤다", interaction: "CREATE" },
+    { id: "exp_15", text: "회의나 녹음 내용을 요약해서 기록으로 만들어봤다", interaction: "ANALYZE" },
+    { id: "exp_16", text: "표나 데이터를 주고 정리하거나 분석시켜봤다", interaction: "ANALYZE" },
+    { id: "exp_17", text: "이력서·자소서·면접 준비를 AI와 해봤다", interaction: "ACT" },
+    { id: "exp_18", text: "반복해서 하던 일을 AI를 이용해 줄이거나 자동화해봤다", interaction: "ACT" },
+    { id: "exp_19", text: "내가 쓴 글을 더 잘 읽히도록 고쳐봤다", interaction: "CREATE" },
+    { id: "exp_20", text: "내가 쓴 글 여러 개에서 반복되는 특징을 찾아봤다", interaction: "ANALYZE" },
+    { id: "exp_21", text: "아이디어에서 시작해 글·대본·이야기 같은 결과물을 같이 만들어봤다", interaction: "CREATE" },
+    { id: "exp_22", text: "원하는 장면을 설명해서 AI 이미지를 만들어봤다", interaction: "CREATE" },
+    { id: "exp_23", text: "이미지나 디자인을 보여주고 개선점을 찾아봤다", interaction: "DECIDE" },
+    { id: "exp_24", text: "AI에게 내 생각과 반대되는 입장에서 반론해달라고 해봤다", interaction: "THINK" },
+    { id: "exp_25", text: "내 아이디어의 허점이나 실패할 이유를 찾아달라고 해봤다", interaction: "DECIDE" },
+    { id: "exp_26", text: "AI와 여러 번 대화하면서 처음 생각을 수정하고 발전시켜봤다", interaction: "THINK" },
+    { id: "exp_27", text: "여러 선택지를 AI와 하나씩 비교하면서 실제 결정을 내려봤다", interaction: "DECIDE" },
+    { id: "exp_28", text: "이미 세운 계획을 보여주고 하지 말아야 할 이유도 검토해봤다", interaction: "DECIDE" },
+    { id: "exp_29", text: "코딩을 잘 몰라도 AI에게 부탁해서 작동하는 것을 만들어봤다", interaction: "CREATE" },
+    { id: "exp_30", text: "AI와 코드를 여러 번 고치면서 실제 오류를 해결해봤다", interaction: "THINK" },
+    { id: "exp_31", text: "AI로 만든 웹사이트나 프로그램을 실제로 배포해봤다", interaction: "ACT" },
+    { id: "exp_32", text: "AI가 다른 앱이나 서비스를 이용할 수 있도록 연결해봤다", interaction: "ACT" },
+    { id: "exp_33", text: "여러 단계로 하던 작업을 AI와 하나의 작업 흐름으로 만들어봤다", interaction: "ACT" },
+    { id: "exp_34", text: "AI가 반복해서 따를 나만의 지침이나 규칙을 만들어봤다", interaction: "ACT" },
+    { id: "exp_35", text: "내 기록 여러 개를 보여주고 반복되는 패턴을 찾아봤다", interaction: "OBSERVE" },
+    { id: "exp_36", text: "일정 기간 같은 내용을 기록하면서 AI와 변화를 관찰해봤다", interaction: "OBSERVE" },
+    { id: "exp_37", text: "예전 기록들을 모아 시간이 지나며 무엇이 달라졌는지 분석해봤다", interaction: "OBSERVE" },
+    { id: "exp_38", text: "AI와 함께 나만의 노트·기록·지식관리 방식을 만들어봤다", interaction: "ACT" },
+    { id: "exp_39", text: "하나의 프로젝트를 아이디어부터 실제 결과물까지 AI와 진행해봤다", interaction: "ACT" },
+    { id: "exp_40", text: "\"이런 것까지 시켜도 되나?\" 싶은 사소하거나 엉뚱한 일을 AI에게 시켜봤다", interaction: "DISCOVER" }
+  ];
+
+  var EXPERIENCE_STATUS_VALUES = ["NONE", "WANT", "TRIED"];
+
+  // Own namespaced localStorage key — independent of any other state
+  // this site keeps (there is none today, but this never assumes that).
+  var EXPERIENCE_STORAGE_KEY = "myaitype_experience_v1";
+
+  // { [experienceId]: "WANT" | "TRIED" } — NONE is simply absent, per
+  // spec ("NONE은 생략해도 된다"), so storage never grows to hold all 40
+  // ids for someone who only marks a couple.
+  function loadExperienceState() {
+    try {
+      var raw = localStorage.getItem(EXPERIENCE_STORAGE_KEY);
+      if (!raw) return {};
+      var parsed = JSON.parse(raw);
+      return isPlainObject(parsed) ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveExperienceState(state) {
+    try {
+      localStorage.setItem(EXPERIENCE_STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      // Private browsing / quota / disabled storage — state just won't
+      // persist across reloads; the current session still works.
+    }
+  }
+
+  var experienceState = loadExperienceState();
+
+  function getExperienceStatus(id) {
+    var status = experienceState[id];
+    return EXPERIENCE_STATUS_VALUES.indexOf(status) !== -1 ? status : "NONE";
+  }
+
+  function setExperienceStatus(id, status) {
+    if (status === "NONE") {
+      delete experienceState[id];
+    } else {
+      experienceState[id] = status;
+    }
+    saveExperienceState(experienceState);
+  }
+
+  // Implements exactly the 5 reversible transitions from the spec:
+  // NONE->WANT, NONE->TRIED, WANT->TRIED, WANT->NONE, TRIED->NONE.
+  // TRIED->WANT is deliberately not a valid edge (clicking "해보고
+  // 싶어요" while already TRIED is a no-op — the UI also disables that
+  // button in this state so it isn't a dead click).
+  function toggleExperienceStatus(id, action) {
+    var current = getExperienceStatus(id);
+    var next = current;
+    if (action === "TRIED") {
+      next = current === "TRIED" ? "NONE" : "TRIED";
+    } else if (action === "WANT") {
+      if (current === "WANT") next = "NONE";
+      else if (current === "NONE") next = "WANT";
+      // current === "TRIED": next stays "TRIED" (invalid edge, no-op)
+    }
+    setExperienceStatus(id, next);
+    return next;
+  }
+
+  function experienceById(id) {
+    for (var i = 0; i < EXPERIENCES.length; i++) {
+      if (EXPERIENCES[i].id === id) return EXPERIENCES[i];
+    }
+    return null;
+  }
+
+  // ---- Discovery: no bare Math.random() picks ----
+  //
+  // Builds one shuffled pass over all 40 ids (NONE-status ones first, so
+  // undiscovered experiences surface before ones already marked), then
+  // hands them out one at a time without replacement — so nothing
+  // repeats within a pass, let alone back-to-back. When a pass is
+  // exhausted, a fresh pass is built (so all 40 remain reachable
+  // indefinitely) with a guard against the old pass's last card leading
+  // straight into the new pass's first card.
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function buildExperienceSessionOrder() {
+    var none = [], other = [];
+    EXPERIENCES.forEach(function (exp) {
+      (getExperienceStatus(exp.id) === "NONE" ? none : other).push(exp.id);
+    });
+    return shuffle(none).concat(shuffle(other));
+  }
+
+  var experienceSessionOrder = [];
+  var experienceSessionIndex = 0;
+  var experienceLastShownId = null;
+
+  function pickNextExperienceId() {
+    if (experienceSessionIndex >= experienceSessionOrder.length) {
+      var nextPass = buildExperienceSessionOrder();
+      if (nextPass.length > 1 && nextPass[0] === experienceLastShownId) {
+        var tmp = nextPass[0]; nextPass[0] = nextPass[1]; nextPass[1] = tmp;
+      }
+      experienceSessionOrder = nextPass;
+      experienceSessionIndex = 0;
+    }
+    var id = experienceSessionOrder[experienceSessionIndex++];
+    experienceLastShownId = id;
+    return id;
+  }
+
+  // ---- DOM wiring ----
+  var experienceCardTextEl = document.getElementById("experienceCardText");
+  var experienceTriedBtn = document.getElementById("experienceTriedBtn");
+  var experienceWantBtn = document.getElementById("experienceWantBtn");
+  var experienceNextBtn = document.getElementById("experienceNextBtn");
+  var experienceDiscoveryEl = document.getElementById("experienceDiscovery");
+  var experienceCollectionEl = document.getElementById("experienceCollection");
+  var experienceCollectionBtn = document.getElementById("experienceCollectionBtn");
+  var experienceBackToDiscoveryBtn = document.getElementById("experienceBackToDiscoveryBtn");
+  var experienceCollectionListEl = document.getElementById("experienceCollectionList");
+  var experienceCountTriedEl = document.getElementById("experienceCountTried");
+  var experienceCountWantEl = document.getElementById("experienceCountWant");
+  var experienceCountNoneEl = document.getElementById("experienceCountNone");
+  var experienceFilterBtns = document.querySelectorAll(".experience-filter-btn");
+
+  var currentExperienceId = null;
+  var experienceCurrentFilter = "ALL";
+
+  function updateExperienceCardButtons() {
+    if (!experienceTriedBtn || !experienceWantBtn) return;
+    var status = getExperienceStatus(currentExperienceId);
+    experienceTriedBtn.classList.toggle("is-active", status === "TRIED");
+    experienceWantBtn.classList.toggle("is-active", status === "WANT");
+    experienceWantBtn.disabled = status === "TRIED";
+  }
+
+  function renderExperienceCard() {
+    var exp = experienceById(currentExperienceId);
+    if (!exp || !experienceCardTextEl) return;
+    experienceCardTextEl.textContent = exp.text;
+    updateExperienceCardButtons();
+  }
+
+  function showNextExperience() {
+    currentExperienceId = pickNextExperienceId();
+    renderExperienceCard();
+  }
+
+  function renderExperienceCollection() {
+    if (experienceCountTriedEl) {
+      var counts = { TRIED: 0, WANT: 0, NONE: 0 };
+      EXPERIENCES.forEach(function (exp) { counts[getExperienceStatus(exp.id)]++; });
+      experienceCountTriedEl.textContent = counts.TRIED;
+      experienceCountWantEl.textContent = counts.WANT;
+      experienceCountNoneEl.textContent = counts.NONE;
+    }
+
+    if (!experienceCollectionListEl) return;
+    while (experienceCollectionListEl.firstChild) {
+      experienceCollectionListEl.removeChild(experienceCollectionListEl.firstChild);
+    }
+
+    EXPERIENCES.forEach(function (exp) {
+      var status = getExperienceStatus(exp.id);
+      if (experienceCurrentFilter !== "ALL" && experienceCurrentFilter !== status) return;
+
+      var li = document.createElement("li");
+      li.className = "experience-collection-item";
+
+      var textEl = document.createElement("p");
+      textEl.className = "experience-collection-item-text";
+      textEl.textContent = exp.text;
+      li.appendChild(textEl);
+
+      var actions = document.createElement("div");
+      actions.className = "experience-collection-item-actions";
+
+      var triedBtn = document.createElement("button");
+      triedBtn.type = "button";
+      triedBtn.className = "experience-status-btn experience-status-btn-sm" + (status === "TRIED" ? " is-active" : "");
+      triedBtn.textContent = "해봤어요";
+      triedBtn.addEventListener("click", function () {
+        toggleExperienceStatus(exp.id, "TRIED");
+        renderExperienceCollection();
+        if (currentExperienceId === exp.id) updateExperienceCardButtons();
+      });
+
+      var wantBtn = document.createElement("button");
+      wantBtn.type = "button";
+      wantBtn.className = "experience-status-btn experience-status-btn-sm" + (status === "WANT" ? " is-active" : "");
+      wantBtn.textContent = "해보고 싶어요";
+      wantBtn.disabled = status === "TRIED";
+      wantBtn.addEventListener("click", function () {
+        toggleExperienceStatus(exp.id, "WANT");
+        renderExperienceCollection();
+        if (currentExperienceId === exp.id) updateExperienceCardButtons();
+      });
+
+      actions.appendChild(triedBtn);
+      actions.appendChild(wantBtn);
+      li.appendChild(actions);
+      experienceCollectionListEl.appendChild(li);
+    });
+  }
+
+  if (experienceTriedBtn) {
+    experienceTriedBtn.addEventListener("click", function () {
+      toggleExperienceStatus(currentExperienceId, "TRIED");
+      updateExperienceCardButtons();
+    });
+  }
+  if (experienceWantBtn) {
+    experienceWantBtn.addEventListener("click", function () {
+      toggleExperienceStatus(currentExperienceId, "WANT");
+      updateExperienceCardButtons();
+    });
+  }
+  if (experienceNextBtn) {
+    experienceNextBtn.addEventListener("click", showNextExperience);
+  }
+
+  if (experienceCollectionBtn) {
+    experienceCollectionBtn.addEventListener("click", function () {
+      experienceDiscoveryEl.hidden = true;
+      experienceCollectionEl.hidden = false;
+      renderExperienceCollection();
+    });
+  }
+  if (experienceBackToDiscoveryBtn) {
+    experienceBackToDiscoveryBtn.addEventListener("click", function () {
+      experienceCollectionEl.hidden = true;
+      experienceDiscoveryEl.hidden = false;
+    });
+  }
+
+  for (var efi = 0; efi < experienceFilterBtns.length; efi++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        experienceCurrentFilter = btn.getAttribute("data-filter");
+        for (var i = 0; i < experienceFilterBtns.length; i++) {
+          experienceFilterBtns[i].classList.toggle("is-active", experienceFilterBtns[i] === btn);
+        }
+        renderExperienceCollection();
+      });
+    })(experienceFilterBtns[efi]);
+  }
+
+  if (experienceCardTextEl) {
+    experienceSessionOrder = buildExperienceSessionOrder();
+    showNextExperience();
+  }
 })();

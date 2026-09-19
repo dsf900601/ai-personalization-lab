@@ -313,6 +313,11 @@
         어떤 AI처럼 행동하고 있는지 살펴봅니다.
       </p>
       <a href="#diagnose" id="startObservationBtn" class="btn btn-primary btn-large">내 AI 관찰하기 →</a>
+      <!-- Secondary, quieter action — never competes with the Primary
+           CTA above for visual weight. Plain anchor jump to the
+           Experience section, same pattern as the Primary CTA's own
+           #diagnose jump. -->
+      <a href="#experience" id="experienceEntryLink" class="hero-secondary-link">AI 경험 둘러보기</a>
     </div>
   </section>
 
@@ -585,6 +590,63 @@
 
       <div class="feedback-placeholder">
         <p>※ 더 많은 사람들의 피드백을 모아 분석할 수 있는 설문 기능은 준비 중입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI EXPERIENCE (MVP v0.1) -->
+  <!-- Independent from the diagnostic system above: Experience state
+       (id -> TRIED/WANT, in localStorage under its own namespaced key)
+       is never read by the Analyzer Prompt, the Schema 1.0 parser/
+       normalizer, Axis/Role/Habit/Derived-Pattern logic, the Type
+       Confidence Gate, or the Share Card — and no diagnostic result
+       ever writes Experience state. This is not a diagnosis: it's a
+       discover/record/revisit loop, connected to the diagnosis flow
+       only via the plain link at the bottom of the Collection view. -->
+  <section class="experience" id="experience">
+    <div class="wrap">
+      <div class="experience-discovery" id="experienceDiscovery">
+        <p class="section-sub">AI로 이런 것도 해봤어요?</p>
+
+        <div class="experience-card" id="experienceCard">
+          <p class="experience-card-text" id="experienceCardText"></p>
+          <div class="experience-card-actions">
+            <button type="button" id="experienceTriedBtn" class="experience-status-btn">해봤어요</button>
+            <button type="button" id="experienceWantBtn" class="experience-status-btn">해보고 싶어요</button>
+          </div>
+        </div>
+
+        <button type="button" id="experienceNextBtn" class="btn btn-secondary">다른 경험 보기 →</button>
+        <button type="button" id="experienceCollectionBtn" class="btn-link">내 경험 도감 보기</button>
+      </div>
+
+      <div class="experience-collection" id="experienceCollection" hidden>
+        <div class="experience-collection-summary">
+          <span>해봤어요 <strong id="experienceCountTried">0</strong></span>
+          <span>해보고 싶어요 <strong id="experienceCountWant">0</strong></span>
+          <span>아직 <strong id="experienceCountNone">0</strong></span>
+        </div>
+
+        <div class="experience-collection-filters">
+          <button type="button" class="experience-filter-btn is-active" data-filter="ALL">전체</button>
+          <button type="button" class="experience-filter-btn" data-filter="TRIED">해봤어요</button>
+          <button type="button" class="experience-filter-btn" data-filter="WANT">해보고 싶어요</button>
+          <button type="button" class="experience-filter-btn" data-filter="NONE">아직</button>
+        </div>
+
+        <ul class="experience-collection-list" id="experienceCollectionList"></ul>
+
+        <button type="button" id="experienceBackToDiscoveryBtn" class="btn-link">발견하기로 돌아가기</button>
+
+        <div class="experience-diagnosis-link">
+          <p>
+            AI와 해본 일은 계속 늘어납니다.<br><br>
+            그 과정에서<br>
+            당신의 ChatGPT가 보이는 행동도<br>
+            달라졌을까요?
+          </p>
+          <a href="#diagnose" class="btn btn-secondary">내 AI 관찰하기 →</a>
+        </div>
       </div>
     </div>
   </section>
