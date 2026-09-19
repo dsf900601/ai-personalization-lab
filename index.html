@@ -343,62 +343,35 @@
     </div>
   </section>
 
-  <!-- HOW IT WORKS -->
-  <section class="how">
-    <div class="wrap">
-      <h2>사용 방법</h2>
-      <ol class="steps">
-        <li class="step">
-          <span class="step-num">1</span>
-          <div>
-            <h3>짧은 질문 3개에 답해보세요</h3>
-            <p>서로 다른 상황의 질문 3개를 평소 쓰는 ChatGPT에 하나씩 물어보고, 그 응답을 확인합니다.</p>
-          </div>
-        </li>
-        <li class="step">
-          <span class="step-num">2</span>
-          <div>
-            <h3>Analyzer Prompt를 실행하세요</h3>
-            <p>세 응답을 바탕으로 자동 생성된 Analyzer Prompt를 같은 ChatGPT에 붙여넣습니다.</p>
-          </div>
-        </li>
-        <li class="step">
-          <span class="step-num">3</span>
-          <div>
-            <h3>결과를 확인하고 비교해보세요</h3>
-            <p>Analyzer의 답변을 붙여넣으면 결과 카드가 만들어집니다. 다른 사람의 결과와 비교해보세요.</p>
-          </div>
-        </li>
-      </ol>
-    </div>
-  </section>
-
   <!-- PROBE-BASED DIAGNOSTIC ENTRY (Beta) -->
-  <!-- This is now the site's primary/only visible diagnosis entry point:
+  <!-- This is the site's primary/only visible diagnosis entry point:
        the user runs 3 short Probe questions against their own AI and
        pastes back each response. Once all three are collected, an
        Analyzer Prompt (buildAnalyzerPrompt in script.js) is generated —
        its required output is the SAME Schema 1.0 JSON the retired long
        DIAGNOSTIC_PROMPT also targets, so the result still goes through
-       the existing #resultInput / #parseBtn flow in the SHARE section
-       below, unchanged. The old long-prompt UI (#promptText/#copyBtn)
-       has been removed from this page, but DIAGNOSTIC_PROMPT and its
-       parser/normalizer/Result UI/Share Card in script.js are all still
-       intact and untouched — kept for compatibility and as a rollback/
-       reference path until the Probe method is validated. This section
-       keeps id="diagnose" so the Hero's "내 AI 관찰하기" CTA still
-       resolves to the actual diagnosis entry point. -->
+       the existing #resultInput / #parseBtn flow in the (now initially
+       hidden — see script.js) SHARE section below, unchanged. The old
+       long-prompt UI (#promptText/#copyBtn) and the standalone "사용
+       방법" step list have both been removed from this page — the
+       per-step instructions inside the flow below (copy this question /
+       paste the response here) already carry that guidance at the point
+       it's actually needed. DIAGNOSTIC_PROMPT and its parser/normalizer/
+       Result UI/Share Card in script.js are all still intact and
+       untouched — kept for compatibility and as a rollback/reference
+       path until the Probe method is validated. This section keeps
+       id="diagnose" so the Hero's "내 AI 관찰하기" CTA still resolves to
+       the actual diagnosis entry point. -->
   <section class="probe-beta" id="diagnose">
     <div class="wrap">
       <div class="probe-beta-teaser" id="probeBetaTeaser">
         <p class="probe-beta-badge">Beta</p>
         <h2>내 ChatGPT 관찰하기</h2>
         <p class="section-sub">
-          서로 다른 상황의 짧은 질문 3개에 대한 실제 응답을 모아,<br class="mobile-only">
-          ChatGPT가 어떤 방식으로 개인화되어 있는지 관찰합니다.
+          짧은 질문 3개로<br class="mobile-only">
+          ChatGPT가 실제로 어떻게 반응하는지 관찰합니다.
         </p>
         <button type="button" id="probeBetaStartBtn" class="btn btn-primary btn-large">진단 시작하기 →</button>
-        <p class="probe-beta-note">아직 검증 중인 진단 방식이에요. 결과는 참고용으로 봐주세요.</p>
       </div>
 
       <div class="probe-beta-flow" id="probeBetaFlow" hidden>
@@ -488,26 +461,15 @@
     </div>
   </section>
 
-  <!-- EXAMPLE RESULTS -->
-  <section class="examples">
-    <div class="wrap">
-      <h2>이런 결과가 나올 수 있어요</h2>
-      <ul class="example-list">
-        <li>장기맥락형 공동사고 파트너</li>
-        <li>실행관리형 비서</li>
-        <li>탐구형 교사</li>
-        <li>창작협업형 파트너</li>
-        <li>정보검색 중심형</li>
-      </ul>
-      <p class="example-note">
-        유형은 미리 정해진 목록에서 선택되는 것이 아닙니다.<br>
-        ChatGPT가 현재 상호작용 패턴을 바탕으로 직접 이름을 붙입니다.
-      </p>
-    </div>
-  </section>
-
   <!-- SHARE / FEEDBACK -->
-  <section class="share" id="share">
+  <!-- Hidden until an Analyzer Prompt has actually been generated (see
+       script.js's probeGenerateBtn handler, which clears this `hidden`
+       attribute) — the result-paste UI is the diagnosis flow's last
+       step, not something shown before the user has started. The
+       section, its #resultInput/#parseBtn wiring, parser/normalizer,
+       Result UI and Share Card are all unchanged; only its initial
+       visibility moved. -->
+  <section class="share" id="share" hidden>
     <div class="wrap">
       <h2>결과 공유하기</h2>
       <p class="section-sub">

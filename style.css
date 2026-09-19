@@ -871,11 +871,6 @@ svg.glyph-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
   border-bottom: 1px solid var(--line-soft);
 }
 .probe-beta-teaser { text-align: center; }
-.probe-beta-note {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-top: 10px;
-}
 .probe-beta-badge {
   display: inline-block;
   font-size: 0.72rem;

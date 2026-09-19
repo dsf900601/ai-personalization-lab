@@ -3108,6 +3108,14 @@ Output 규칙:
   var probeAnalyzerCopyFeedback = document.getElementById("probeAnalyzerCopyFeedback");
   var probeAnalyzerGuide = document.getElementById("probeAnalyzerGuide");
 
+  // The result-paste UI (#share — #resultInput/#parseBtn and everything
+  // under it) starts `hidden` in index.html: it's the diagnosis flow's
+  // last step, not something shown before the user has even started.
+  // Revealing it here, once, only shows/hides the existing section —
+  // parsing, normalization, Result UI and Share Card underneath are
+  // untouched.
+  var shareSection = document.getElementById("share");
+
   if (probeGenerateBtn) {
     probeGenerateBtn.addEventListener("click", function () {
       var value = readProbeResponse("C");
@@ -3124,6 +3132,7 @@ Output 규칙:
 
       probeAnalyzerPromptText.textContent = buildAnalyzerPrompt(probeResponses.A, probeResponses.B, probeResponses.C);
       probeAnalyzerResult.hidden = false;
+      if (shareSection) shareSection.hidden = false;
       probeAnalyzerResult.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
