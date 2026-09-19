@@ -3358,9 +3358,27 @@ Output 규칙:
   var experienceCountWantEl = document.getElementById("experienceCountWant");
   var experienceCountNoneEl = document.getElementById("experienceCountNone");
   var experienceFilterBtns = document.querySelectorAll(".experience-filter-btn");
+  var experienceProgressTextEl = document.getElementById("experienceProgressText");
 
   var currentExperienceId = null;
   var experienceCurrentFilter = "ALL";
+
+  // Same counting semantics as before (iterate all 40, tally by
+  // getExperienceStatus), just named so the Discovery view's quiet
+  // progress line ("N개 해봤어요 · N개 저장") and the Collection
+  // summary can share one implementation instead of duplicating it.
+  function computeExperienceCounts() {
+    var counts = { TRIED: 0, WANT: 0, NONE: 0 };
+    EXPERIENCES.forEach(function (exp) { counts[getExperienceStatus(exp.id)]++; });
+    return counts;
+  }
+
+  // Plain collection-status readout — no XP/level/rank/percentage.
+  function renderExperienceProgress() {
+    if (!experienceProgressTextEl) return;
+    var counts = computeExperienceCounts();
+    experienceProgressTextEl.textContent = counts.TRIED + "개 해봤어요 · " + counts.WANT + "개 저장";
+  }
 
   function updateExperienceCardButtons() {
     if (!experienceTriedBtn || !experienceWantBtn) return;
@@ -3384,12 +3402,12 @@ Output 규칙:
 
   function renderExperienceCollection() {
     if (experienceCountTriedEl) {
-      var counts = { TRIED: 0, WANT: 0, NONE: 0 };
-      EXPERIENCES.forEach(function (exp) { counts[getExperienceStatus(exp.id)]++; });
+      var counts = computeExperienceCounts();
       experienceCountTriedEl.textContent = counts.TRIED;
       experienceCountWantEl.textContent = counts.WANT;
       experienceCountNoneEl.textContent = counts.NONE;
     }
+    renderExperienceProgress();
 
     if (!experienceCollectionListEl) return;
     while (experienceCollectionListEl.firstChild) {
@@ -3443,12 +3461,14 @@ Output 규칙:
     experienceTriedBtn.addEventListener("click", function () {
       toggleExperienceStatus(currentExperienceId, "TRIED");
       updateExperienceCardButtons();
+      renderExperienceProgress();
     });
   }
   if (experienceWantBtn) {
     experienceWantBtn.addEventListener("click", function () {
       toggleExperienceStatus(currentExperienceId, "WANT");
       updateExperienceCardButtons();
+      renderExperienceProgress();
     });
   }
   if (experienceNextBtn) {
@@ -3484,5 +3504,6 @@ Output 규칙:
   if (experienceCardTextEl) {
     experienceSessionOrder = buildExperienceSessionOrder();
     showNextExperience();
+    renderExperienceProgress();
   }
 })();

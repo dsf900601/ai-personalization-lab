@@ -606,7 +606,17 @@
   <section class="experience" id="experience">
     <div class="wrap">
       <div class="experience-discovery" id="experienceDiscovery">
-        <p class="section-sub">AI로 이런 것도 해봤어요?</p>
+        <div class="experience-intro">
+          <p class="experience-eyebrow">
+            <svg class="experience-eyebrow-glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="#glyph-search"/></svg>
+            AI EXPERIENCE
+          </p>
+          <h2 class="experience-heading">AI로 어디까지<br>해봤어요?</h2>
+          <p class="experience-lead">
+            AI에게 시켜본 일을 하나씩 발견하고<br class="mobile-only">
+            내 경험 도감을 만들어보세요.
+          </p>
+        </div>
 
         <div class="experience-card" id="experienceCard">
           <p class="experience-card-text" id="experienceCardText"></p>
@@ -616,8 +626,12 @@
           </div>
         </div>
 
-        <button type="button" id="experienceNextBtn" class="btn btn-secondary">다른 경험 보기 →</button>
-        <button type="button" id="experienceCollectionBtn" class="btn-link">내 경험 도감 보기</button>
+        <button type="button" id="experienceNextBtn" class="experience-next-link">다른 경험 →</button>
+
+        <div class="experience-progress">
+          <p class="experience-progress-text" id="experienceProgressText"></p>
+          <button type="button" id="experienceCollectionBtn" class="experience-collection-entry">내 경험 도감 보기 →</button>
+        </div>
       </div>
 
       <div class="experience-collection" id="experienceCollection" hidden>
