@@ -11,10 +11,24 @@
 
 .share-result{padding:18px 18px 22px;background:#f2f0e9}.share-hero{position:relative;min-height:390px;border:1px solid #c6cecb;background:linear-gradient(160deg,#eef0eb 0%,#f7f2e8 58%,#e4ecec 100%);overflow:hidden;padding:24px 20px}.share-kicker{font:700 9px ui-monospace,monospace;letter-spacing:.14em;color:#718387}.share-hero h3{font-size:28px;line-height:1.15;letter-spacing:-.045em;margin:7px 0 0;max-width:330px}.share-character{height:190px;margin-top:8px;display:flex;align-items:center;justify-content:center}.share-character svg{width:185px;height:185px}.ingredient-cloud{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}.ingredient-chip{border-top:1px solid #aebcbb;padding:8px 0 4px;display:grid;grid-template-columns:1fr auto;gap:8px}.ingredient-chip:nth-child(1){grid-column:1/-1}.ingredient-chip b{font-size:12px}.ingredient-chip strong{font:800 18px ui-monospace,monospace;color:#35565c}.share-habits{padding:22px 4px 6px}.share-habits h4,.share-note h4{font-size:14px;margin:0 0 10px}.share-habits ul{list-style:none;margin:0;padding:0}.share-habits li{font-size:12px;padding:9px 0;border-bottom:1px dotted #bcc6c4}.share-habits li:before{content:"◇";color:#6b9aa2;margin-right:8px}.share-note{margin-top:16px;border:1px solid #b5c0bf;padding:15px;background:rgba(255,255,255,.35)}.share-note p{font-size:13px;line-height:1.7;margin:0}.deep-cta{margin:18px 0 0;background:#18272d;color:#edf2f2;border:0;border-radius:3px;width:100%;padding:15px;font-weight:800;cursor:pointer}.deep-profile{border-top:1px solid #c7cecd;background:#e8ece9;padding:26px 18px 30px}.deep-profile[hidden]{display:none}.deep-head{padding:0 6px 18px}.deep-head .tiny-brand{margin-bottom:7px}.deep-head h3{font-size:24px;letter-spacing:-.04em;margin:0}.deep-head p{font-size:12px;color:#66777a;margin:8px 0 0}.fingerprint{background:#f5f2ea;border:1px solid #bcc6c4;padding:18px 16px}.loop-row{display:grid;grid-template-columns:74px 1fr 38px;align-items:center;gap:9px;margin:8px 0}.loop-name{font:700 10px ui-monospace,monospace}.loop-track{height:7px;background:#d9ded9}.loop-fill{height:100%;background:#6f9ea6}.loop-value{font:700 12px ui-monospace,monospace;text-align:right}.deep-section{margin-top:14px;background:#f5f2ea;border:1px solid #bcc6c4;padding:17px 16px}.deep-section h4{font-size:14px;margin:0 0 11px}.formation{display:grid;gap:8px}.formation div{font-size:12px;padding:9px 10px;border-left:2px solid #7ba4aa;background:#eceee9}.deep-ingredient{padding:8px 0;border-bottom:1px dotted #bdc6c3}.deep-ingredient:last-child{border-bottom:0}.deep-ingredient b{font-size:12px}.deep-ingredient span{float:right;font:700 12px ui-monospace,monospace}.deep-ingredient small{display:block;color:#68787a;margin-top:3px}.legacy-card{display:none!important}@media(min-width:560px){.share-result,.deep-profile{padding-left:34px;padding-right:34px}.ingredient-cloud{grid-template-columns:repeat(2,1fr)}}
 
+
+/* VISUAL1 — character world */
+.share-hero{padding:24px 18px 20px;background:#f3f0e8}
+.world-scene{height:330px;margin:18px -4px 18px;position:relative;overflow:hidden;border:1px solid #aebbb9;background:linear-gradient(180deg,#e8efed 0 63%,#ddd8cc 63% 100%)}
+.world-scene:before{content:"";position:absolute;left:-65px;top:-70px;width:235px;height:235px;border:1px solid rgba(71,101,104,.13);border-radius:50%;box-shadow:0 0 0 34px rgba(71,101,104,.035),0 0 0 68px rgba(71,101,104,.025)}
+.scene-label{position:absolute;right:12px;top:11px;font:700 8px ui-monospace,monospace;letter-spacing:.15em;color:#61777a;border:1px solid #9caeac;padding:4px 7px;background:rgba(245,243,235,.75)}
+.scene-shelf{position:absolute;right:18px;width:105px;height:6px;border-top:1px solid #74898b;border-bottom:1px solid rgba(116,137,139,.35)}.shelf-a{top:86px}.shelf-b{top:139px;width:82px}
+.scene-shelf:before,.scene-shelf:after{content:"";position:absolute;bottom:5px;width:17px;border:1px solid #8ea09f;background:#edf0ea}.scene-shelf:before{height:27px;left:9px}.scene-shelf:after{height:38px;left:36px}
+.scene-table{position:absolute;left:22px;right:22px;bottom:42px;height:56px;border-top:2px solid #64797c;background:linear-gradient(180deg,rgba(170,153,128,.16),rgba(170,153,128,.06))}.scene-table:before,.scene-table:after{content:"";position:absolute;top:54px;width:2px;height:42px;background:#748688}.scene-table:before{left:14px}.scene-table:after{right:14px}
+.scene-character{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);width:190px;height:190px;display:flex;align-items:center;justify-content:center;z-index:3}.scene-character svg{width:180px;height:180px;filter:drop-shadow(0 8px 5px rgba(28,43,46,.08))}
+.scene-props{position:absolute;inset:0;z-index:4}.scene-prop{position:absolute;min-width:50px;max-width:82px;padding:6px 7px;border:1px solid #8ea09f;background:rgba(247,244,235,.94);box-shadow:2px 3px 0 rgba(75,95,97,.08);font:700 8px/1.25 ui-monospace,monospace;color:#344b4f}.scene-prop strong{display:block;font-size:12px;margin-top:2px;color:#263c40}.scene-prop:before{content:"◇";font-size:9px;color:#67969d;margin-right:4px}.scene-prop:nth-child(1){left:12px;top:62px;transform:rotate(-2deg)}.scene-prop:nth-child(2){right:16px;top:174px;transform:rotate(2deg)}.scene-prop:nth-child(3){left:18px;bottom:27px;transform:rotate(1deg)}.scene-prop:nth-child(4){right:18px;bottom:24px;transform:rotate(-1deg)}.scene-prop:nth-child(n+5){display:none}
+.share-subtitle{font-size:12px;line-height:1.65;color:#5f7072;margin:0 2px 18px;padding-bottom:16px;border-bottom:1px solid #bcc6c3}
+.ingredient-cloud{gap:10px}.ingredient-chip{padding:9px 0 5px}.ingredient-chip:nth-child(1){grid-column:auto}.ingredient-chip b{font-size:11px;line-height:1.35}.ingredient-chip strong{font-size:17px}
+@media(max-width:390px){.world-scene{height:310px}.scene-character{width:172px;height:172px}.scene-character svg{width:164px;height:164px}.scene-prop{max-width:72px;font-size:7px}.share-hero h3{font-size:26px}}
 </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · SHARE+DEEP</span></header>
+<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · VISUAL1</span></header>
 <main>
 <section class="intro wrap" id="start">
   <p class="eyebrow">OUR AI RECIPE</p>
@@ -44,7 +58,14 @@
     <div class="share-hero">
       <div class="share-kicker">MY AI TYPE · OUR AI RECIPE</div>
       <h3>주인님이 AI를 만들 때<br>넣은 재료들</h3>
-      <div class="share-character" id="shareAnimal" aria-hidden="true"></div>
+      <div class="world-scene" id="worldScene" aria-hidden="true">
+        <div class="scene-label" id="sceneLabel">WORKSHOP</div>
+        <div class="scene-shelf shelf-a"></div><div class="scene-shelf shelf-b"></div>
+        <div class="scene-table"></div>
+        <div class="scene-character" id="shareAnimal"></div>
+        <div class="scene-props" id="sceneProps"></div>
+      </div>
+      <p class="share-subtitle" id="shareSubtitle"></p>
       <div class="ingredient-cloud" id="shareIngredients"></div>
     </div>
     <div class="share-habits"><h4>우리 사이에 생긴 이상한 습관</h4><ul id="shareHabits"></ul></div>
@@ -118,6 +139,7 @@ draft_loop:"BUILD",iterative_personalize:"ADAPT",user_directs_ai_builds:"BUILD",
 };
 const MODIFIER_BY_ID={scope_expand:"OVERDRIVE",co_think:"COOPERATIVE"};
 const worlds={workshop:"작업실",archive:"기록 보관실",library:"자료실",garden:"관찰 정원",control_room:"컨트롤 룸"};
+const worldCaps={workshop:"WORKSHOP",archive:"ARCHIVE",library:"LIBRARY",garden:"OBSERVATION GARDEN",control_room:"CONTROL ROOM"};
 function deriveVisualProfile(d){
  const scores={INFER:0,VERIFY:0,BUILD:0,ORGANIZE:0,DRIVE:0,EXPLORE:0,GUARD:0,ADAPT:0};
  const modifiers={OVERDRIVE:0,COOPERATIVE:0};
@@ -144,6 +166,9 @@ horse:`<svg viewBox="0 0 180 180"><path ${fill} d="M58 39c17 8 37 9 58 1l16 37c1
 function render(d){const visual=deriveVisualProfile(d);
  const sorted=d.ingredients.slice().sort((a,b)=>b.percent-a.percent);
  $("#shareAnimal").innerHTML=animalSVG(visual.animal);
+ $("#sceneLabel").textContent=worldCaps[visual.world]||"OUR AI WORLD";
+ $("#shareSubtitle").textContent=d.subtitle||"같은 ChatGPT로 시작했는데, 이렇게 자랐습니다.";
+ const sp=$("#sceneProps");sp.innerHTML="";sorted.slice(0,4).forEach(x=>{const e=document.createElement("div");e.className="scene-prop";e.innerHTML="<span></span><strong></strong>";e.querySelector("span").textContent=(labelById[x.id]||x.id).replace(/\s+/g," ");e.querySelector("strong").textContent=x.percent+"%";sp.appendChild(e)});
  const si=$("#shareIngredients");si.innerHTML="";sorted.forEach(x=>{const el=document.createElement("div");el.className="ingredient-chip";const b=document.createElement("b");b.textContent=labelById[x.id];const strong=document.createElement("strong");strong.textContent=x.percent+"%";el.append(b,strong);si.appendChild(el)});
  const sh=$("#shareHabits");sh.innerHTML="";(d.habits||[]).slice(0,3).forEach(h=>{const li=document.createElement("li");li.textContent=h;sh.appendChild(li)});$("#shareAiNote").textContent=d.ai_note||"";
  const fp=$("#fingerprint");fp.innerHTML="";visual.ranked.filter(x=>x[1]>0).forEach(([name,val])=>{const row=document.createElement("div");row.className="loop-row";row.innerHTML='<span class="loop-name"></span><div class="loop-track"><div class="loop-fill"></div></div><span class="loop-value"></span>';row.querySelector(".loop-name").textContent=name;row.querySelector(".loop-fill").style.width=Math.min(100,val*2)+"%";row.querySelector(".loop-value").textContent=val;fp.appendChild(row)});
