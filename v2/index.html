@@ -26,9 +26,31 @@
 .ingredient-cloud{gap:10px}.ingredient-chip{padding:9px 0 5px}.ingredient-chip:nth-child(1){grid-column:auto}.ingredient-chip b{font-size:11px;line-height:1.35}.ingredient-chip strong{font-size:17px}
 @media(max-width:390px){.world-scene{height:310px}.scene-character{width:172px;height:172px}.scene-character svg{width:164px;height:164px}.scene-prop{max-width:72px;font-size:7px}.share-hero h3{font-size:26px}}
 </style>
+
+<style>
+/* VISUAL2 — ingredients live inside the world, not in a duplicate list */
+.ingredient-cloud{display:none!important}
+.world-scene{height:410px;background:linear-gradient(180deg,#e8efed 0 66%,#d9d2c3 66% 100%)}
+.scene-shelf{opacity:.65}.scene-table{bottom:58px;height:74px}
+.scene-character{bottom:92px;width:180px;height:180px}
+.scene-character svg{width:170px;height:170px}
+.scene-prop{min-width:0;max-width:none;width:74px;height:74px;padding:5px;background:transparent;border:0;box-shadow:none;text-align:center;font:700 7px/1.15 ui-monospace,monospace;color:#334b4f}
+.scene-prop:before{display:none}.scene-prop .prop-glyph{width:42px;height:38px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:29px;line-height:1;color:#42676d;filter:grayscale(1);opacity:.9}
+.scene-prop .prop-name{display:block;background:rgba(247,244,235,.9);border-top:1px solid #9eafad;padding:3px 2px 1px;white-space:normal}
+.scene-prop strong{font-size:11px;margin-top:1px;color:#253d41}
+.scene-prop:nth-child(1){left:10px;top:48px;transform:rotate(-2deg)}
+.scene-prop:nth-child(2){right:8px;top:52px;transform:rotate(2deg)}
+.scene-prop:nth-child(3){left:16px;top:158px;transform:rotate(1deg)}
+.scene-prop:nth-child(4){right:12px;top:160px;transform:rotate(-1deg)}
+.scene-prop:nth-child(5){left:22px;bottom:18px;transform:rotate(-1deg)}
+.scene-prop:nth-child(6){left:50%;bottom:7px;transform:translateX(-50%)}
+.scene-prop:nth-child(7){right:18px;bottom:18px;transform:rotate(1deg)}
+.share-subtitle{margin:18px 2px 0;padding-top:15px;border-top:1px solid #bdc7c4;font-size:12px;line-height:1.65;color:#5d6e71}
+@media(max-width:390px){.world-scene{height:390px}.scene-character{bottom:88px;width:166px;height:166px}.scene-character svg{width:158px;height:158px}.scene-prop{width:68px}.scene-prop .prop-glyph{font-size:26px}}
+</style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · VISUAL1</span></header>
+<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · VISUAL2</span></header>
 <main>
 <section class="intro wrap" id="start">
   <p class="eyebrow">OUR AI RECIPE</p>
@@ -66,7 +88,7 @@
         <div class="scene-props" id="sceneProps"></div>
       </div>
       <p class="share-subtitle" id="shareSubtitle"></p>
-      <div class="ingredient-cloud" id="shareIngredients"></div>
+      <div class="ingredient-cloud" id="shareIngredients" hidden></div>
     </div>
     <div class="share-habits"><h4>우리 사이에 생긴 이상한 습관</h4><ul id="shareHabits"></ul></div>
     <div class="share-note"><h4>AI의 한마디</h4><p id="shareAiNote"></p></div>
@@ -147,8 +169,9 @@ function deriveVisualProfile(d){
  const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
  const top=ranked[0][0], second=ranked[1][0];
  const has=(a,b)=>[top,second].includes(a)&&[top,second].includes(b);
- let animal="cat",world="library",reason="여러 행동 신호가 섞여 있어 자료와 도구를 함께 펼쳐 둔 모습으로 표현했어요.";
- if(has("VERIFY","INFER")||top==="VERIFY"){animal="crow";world="archive";reason="과거 기록을 다시 꺼내 현재 답과 대조하고, 빠진 조건이나 모순을 표시하는 행동을 기록 보관실로 표현했어요."}
+ let animal="cat",world="workshop",reason="기존 결정을 펼쳐 두고 만들고 검토하며 수정 흔적을 계속 쌓는 작업 공간으로 표현했어요.";
+ if(scores.ADAPT>=25&&scores.INFER>=20&&scores.VERIFY>=10){animal="dog";world="workshop";reason="기존 결정을 이어 받아 만들고, 실제 결과를 다시 검토한 뒤 수정사항을 다음 작업에 누적하는 흐름을 작업실로 표현했어요."}
+ else if(has("VERIFY","INFER")||top==="VERIFY"){animal="crow";world="archive";reason="과거 기록을 다시 꺼내 현재 답과 대조하고, 빠진 조건이나 모순을 표시하는 행동을 기록 보관실로 표현했어요."}
  else if(has("BUILD","ADAPT")||top==="BUILD"){animal="dog";world="workshop";reason="방향을 받으면 직접 만들고, 수정사항을 다음 결과에 반영하며 작업을 이어가는 행동을 작업대로 표현했어요."}
  else if(has("EXPLORE","DRIVE")||top==="EXPLORE"){animal="cat";world="garden";reason="여러 가능성을 돌아다니며 선택지를 만들고 다음 길을 찾는 행동을 갈림길과 관찰 공간으로 표현했어요."}
  else if(has("ORGANIZE","INFER")||top==="ORGANIZE"){animal="horse";world="library";reason="쌓인 맥락을 구조화하고 긴 작업을 단계별로 운반하는 행동을 정리된 자료실로 표현했어요."}
@@ -163,13 +186,21 @@ dog:`<svg viewBox="0 0 180 180"><path ${fill} d="M58 54c17-13 47-13 64 0 17 14 2
 crow:`<svg viewBox="0 0 180 180"><path ${fill} d="M42 110c8-45 37-76 77-65 22 6 30 22 29 38-1 11-6 19-13 25 1 25-13 48-43 51-27 2-47-17-50-49Z"/><path ${fill} d="m126 66 36 15-34 12"/><path ${common} d="M64 102c22-3 42 7 55 26M78 158l-9 14m33-16 8 16"/><circle cx="119" cy="66" r="4" fill="#26383e"/><path ${accent} d="M54 109c19-9 40-5 57 11-17-1-31 5-42 18-8-8-13-18-15-29Z"/></svg>`,
 rabbit:`<svg viewBox="0 0 180 180"><path ${fill} d="M63 72c-10-29-5-56 7-59 12-3 22 23 21 48m25 11c10-29 5-56-7-59-12-3-22 23-21 48"/><path ${fill} d="M47 111c0-34 18-55 43-55s43 21 43 55-18 53-43 53-43-19-43-53Z"/><path ${common} d="M66 103c5-4 11-4 16 0m16 0c5-4 11-4 16 0M82 121c5 4 11 4 16 0m-8 0v10"/><circle ${accent} cx="90" cy="117" r="5"/></svg>`,
 horse:`<svg viewBox="0 0 180 180"><path ${fill} d="M58 39c17 8 37 9 58 1l16 37c10 24 5 56-15 74-16 15-38 16-55 2-22-17-29-49-18-76Z"/><path ${fill} d="M59 43 39 24l4 44m73-25 22-19-5 46"/><path ${common} d="M65 96c5-4 11-4 16 0m18 0c5-4 11-4 16 0M76 126c9 7 19 7 28 0"/><path ${accent} d="M86 43c8 4 14 13 17 27l-13 8-12-8c2-13 4-22 8-27Z"/></svg>`};return svgs[type]||svgs.cat}
+const PROP_GLYPH={
+context_recall:"▤",continuity:"⌁",context_fill:"◫",decision_memory:"▱",cross_context:"⌘",history_check:"▥",
+recheck:"⌕",pushback:"⇄",missing_constraints:"☐",contradiction:"◇",branching:"⑂",uncertainty:"┄",
+make_first:"⌁",fast_draft:"✎",polish_first:"◈",decompose:"▦",batch_work:"▣",scope_expand:"↗",
+next_step:"→",options:"▤",recommend:"⚑",return_decision:"↩",infer_and_go:"↦",confirm_first:"✓",
+learn_taste:"◉",avoid_dislikes:"×",format_memory:"▧",tone_adapt:"◌",detail_adapt:"⌕",feedback_carry:"◆",
+conclusion_first:"━",context_first:"▱",examples:"▤",structure:"▦",explain_why:"→",
+draft_loop:"▱",iterative_personalize:"◫",co_think:"⇆",user_directs_ai_builds:"⌘",post_finish:"✓+"};
 function render(d){const visual=deriveVisualProfile(d);
  const sorted=d.ingredients.slice().sort((a,b)=>b.percent-a.percent);
  $("#shareAnimal").innerHTML=animalSVG(visual.animal);
  $("#sceneLabel").textContent=worldCaps[visual.world]||"OUR AI WORLD";
  $("#shareSubtitle").textContent=d.subtitle||"같은 ChatGPT로 시작했는데, 이렇게 자랐습니다.";
- const sp=$("#sceneProps");sp.innerHTML="";sorted.slice(0,4).forEach(x=>{const e=document.createElement("div");e.className="scene-prop";e.innerHTML="<span></span><strong></strong>";e.querySelector("span").textContent=(labelById[x.id]||x.id).replace(/\s+/g," ");e.querySelector("strong").textContent=x.percent+"%";sp.appendChild(e)});
- const si=$("#shareIngredients");si.innerHTML="";sorted.forEach(x=>{const el=document.createElement("div");el.className="ingredient-chip";const b=document.createElement("b");b.textContent=labelById[x.id];const strong=document.createElement("strong");strong.textContent=x.percent+"%";el.append(b,strong);si.appendChild(el)});
+ const sp=$("#sceneProps");sp.innerHTML="";sorted.slice(0,7).forEach(x=>{const e=document.createElement("div");e.className="scene-prop prop-"+x.id;e.innerHTML='<span class="prop-glyph"></span><span class="prop-name"></span><strong></strong>';e.querySelector(".prop-glyph").textContent=PROP_GLYPH[x.id]||"◇";e.querySelector(".prop-name").textContent=(labelById[x.id]||x.id).replace(/\s+/g," ");e.querySelector("strong").textContent=x.percent+"%";sp.appendChild(e)});
+ const si=$("#shareIngredients");si.innerHTML="";
  const sh=$("#shareHabits");sh.innerHTML="";(d.habits||[]).slice(0,3).forEach(h=>{const li=document.createElement("li");li.textContent=h;sh.appendChild(li)});$("#shareAiNote").textContent=d.ai_note||"";
  const fp=$("#fingerprint");fp.innerHTML="";visual.ranked.filter(x=>x[1]>0).forEach(([name,val])=>{const row=document.createElement("div");row.className="loop-row";row.innerHTML='<span class="loop-name"></span><div class="loop-track"><div class="loop-fill"></div></div><span class="loop-value"></span>';row.querySelector(".loop-name").textContent=name;row.querySelector(".loop-fill").style.width=Math.min(100,val*2)+"%";row.querySelector(".loop-value").textContent=val;fp.appendChild(row)});
  const di=$("#deepIngredients");di.innerHTML="";sorted.forEach(x=>{const el=document.createElement("div");el.className="deep-ingredient";const loop=LOOP_BY_ID[x.id]||MODIFIER_BY_ID[x.id]||"DETAIL";el.innerHTML='<b></b><span></span><small></small>';el.querySelector("b").textContent=labelById[x.id];el.querySelector("span").textContent=x.percent+"% · "+loop;el.querySelector("small").textContent=x.description||"";di.appendChild(el)});
