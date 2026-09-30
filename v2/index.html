@@ -68,7 +68,7 @@
 @media(max-width:390px){.share-hero h3{font-size:27px}.ingredient-chip{min-height:112px}.ingredient-chip b{font-size:12px}.ingredient-chip small{font-size:9.5px}}
 </style>\n
 <style>
-/* HYBRID2 — recipe scraps, not dashboard cards */
+/* HYBRID3 — recipe scraps, not dashboard cards */
 .ingredient-cloud{display:grid!important;grid-template-columns:1.08fr .92fr;gap:12px 10px;align-items:start;margin:4px 0 8px;padding:2px 1px 6px}
 .ingredient-chip{min-height:0!important;border:0!important;border-radius:4px!important;background:#fff8e9!important;box-shadow:1px 2px 0 rgba(117,84,45,.12),0 0 0 1px rgba(190,157,112,.34)!important;padding:11px 12px 10px!important;transform:rotate(-1.2deg)!important}
 .ingredient-chip:nth-child(2n){transform:rotate(1deg)!important;background:#f8f1df!important}
@@ -81,9 +81,144 @@
 .share-subtitle{margin-top:2px;font-size:12.5px;line-height:1.6}
 @media(max-width:390px){.ingredient-cloud{gap:10px 8px}.ingredient-chip{padding:10px 10px 9px!important}.ingredient-chip .chip-glyph{width:30px;height:30px;font-size:18px}.ingredient-chip strong{font-size:19px}.ingredient-chip b{font-size:11.5px}.ingredient-chip small{font-size:9.2px}}
 </style>
+
+<style id="hybrid3-visual-tuning">
+/* HYBRID3: preserve diagnosis/parser; only tune share-result composition. */
+.hybrid-scene-wrap,
+.result-visual,
+.visual-scene {
+  overflow: visible !important;
+}
+
+.hybrid-scene-wrap img,
+.result-visual img,
+.visual-scene img {
+  position: relative;
+  z-index: 1;
+}
+
+/* Turn the subtitle into a compact note rather than a report paragraph. */
+.result-subtitle,
+.hybrid-subtitle,
+.recipe-subtitle {
+  position: relative;
+  width: calc(100% - 32px);
+  margin: -8px auto 20px !important;
+  padding: 13px 16px 12px !important;
+  background: rgba(255,250,239,.96);
+  border: 1px solid rgba(116,91,54,.18);
+  border-radius: 4px;
+  box-shadow: 0 5px 14px rgba(69,53,31,.05);
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  transform: rotate(-.35deg);
+}
+.result-subtitle::before,
+.hybrid-subtitle::before,
+.recipe-subtitle::before {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 12px;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(1deg);
+  background: rgba(221,194,148,.48);
+}
+
+/* Ingredient field behaves like collected illustrated scraps, not a dashboard grid. */
+.hybrid-ingredients,
+.ingredients-grid,
+.recipe-ingredients {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px 10px !important;
+  padding: 6px 8px 14px !important;
+  overflow: visible !important;
+}
+
+.hybrid-ingredient,
+.ingredient-scrap,
+.recipe-ingredient {
+  position: relative;
+  min-height: 132px;
+  padding: 14px 12px 12px !important;
+  border-radius: 12px 9px 13px 8px !important;
+  background: rgba(255,250,237,.98) !important;
+  border: 1px solid rgba(126,98,56,.22) !important;
+  box-shadow: 0 5px 10px rgba(64,48,25,.07) !important;
+  overflow: visible !important;
+}
+.hybrid-ingredient:nth-child(1),
+.ingredient-scrap:nth-child(1),
+.recipe-ingredient:nth-child(1) { transform: rotate(-1.1deg) translateY(-6px); z-index:4; }
+.hybrid-ingredient:nth-child(2),
+.ingredient-scrap:nth-child(2),
+.recipe-ingredient:nth-child(2) { transform: rotate(.8deg) translateY(-13px); z-index:4; }
+.hybrid-ingredient:nth-child(3),
+.ingredient-scrap:nth-child(3),
+.recipe-ingredient:nth-child(3) { transform: rotate(.65deg); }
+.hybrid-ingredient:nth-child(4),
+.ingredient-scrap:nth-child(4),
+.recipe-ingredient:nth-child(4) { transform: rotate(-.8deg) translateY(-4px); }
+.hybrid-ingredient:nth-child(5),
+.ingredient-scrap:nth-child(5),
+.recipe-ingredient:nth-child(5) { transform: rotate(-.45deg); }
+.hybrid-ingredient:nth-child(6),
+.ingredient-scrap:nth-child(6),
+.recipe-ingredient:nth-child(6) { transform: rotate(.9deg) translateY(-5px); }
+.hybrid-ingredient:nth-child(7),
+.ingredient-scrap:nth-child(7),
+.recipe-ingredient:nth-child(7) {
+  grid-column: 1 / -1;
+  width: 58%;
+  justify-self: center;
+  transform: rotate(-.45deg);
+}
+
+/* Small pictorial "ingredient object" area. Existing glyph remains, but becomes part of a scene-like object. */
+.hybrid-ingredient::after,
+.ingredient-scrap::after,
+.recipe-ingredient::after {
+  content: "";
+  position: absolute;
+  width: 38px;
+  height: 26px;
+  right: 10px;
+  bottom: 9px;
+  opacity: .15;
+  border: 2px solid currentColor;
+  border-radius: 45% 55% 50% 45%;
+  transform: rotate(-8deg);
+}
+
+/* Top ingredients visually trespass upward toward the illustration, as in the golden reference. */
+.hybrid-ingredients > :nth-child(1),
+.ingredients-grid > :nth-child(1),
+.recipe-ingredients > :nth-child(1),
+.hybrid-ingredients > :nth-child(2),
+.ingredients-grid > :nth-child(2),
+.recipe-ingredients > :nth-child(2) {
+  margin-top: -16px;
+}
+
+@media (max-width: 390px) {
+  .hybrid-ingredient,
+  .ingredient-scrap,
+  .recipe-ingredient {
+    min-height: 122px;
+    padding: 12px 10px 10px !important;
+  }
+  .result-subtitle,
+  .hybrid-subtitle,
+  .recipe-subtitle { font-size: 12px !important; }
+}
+</style>
+
 </head>
 <body>
-<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · HYBRID2</span></header>
+<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · HYBRID3</span></header>
 <main>
 <section class="intro wrap" id="start">
   <p class="eyebrow">OUR AI RECIPE</p>
