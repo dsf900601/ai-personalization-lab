@@ -1,1 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>주인님이 AI를 만들 때 넣은 재료들 — MY AI TYPE</title>
+<meta name="description" content="오래 대화하며 만들어진 우리 집 AI의 재료를 발견해보세요.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT</span></header>
+<main>
+<section class="intro wrap" id="start">
+  <p class="eyebrow">OUR AI RECIPE</p>
+  <h1>주인님이 AI를 만들 때<br>넣은 재료들</h1>
+  <p class="lede">성격검사가 아니에요. 나와 오래 대화하면서 <strong>이 ChatGPT에게 반복해서 생긴 행동</strong>을 찾아봅니다.</p>
+  <div class="steps">
+    <div><b>01</b><span>프롬프트 복사</span></div><i></i><div><b>02</b><span>내 ChatGPT에서 실행</span></div><i></i><div><b>03</b><span>결과 붙여넣기</span></div>
+  </div>
+  <button class="primary" id="copyPrompt">진단 프롬프트 복사</button>
+  <p class="feedback" id="copyFeedback" aria-live="polite"></p>
+  <details class="prompt-preview"><summary>프롬프트 미리보기</summary><pre id="promptText"></pre></details>
+</section>
 
+<section class="paste-zone" id="paste">
+ <div class="wrap">
+  <p class="eyebrow">MAKE MY RECIPE</p>
+  <h2>ChatGPT가 준 결과를<br>그대로 붙여넣어 주세요.</h2>
+  <textarea id="resultInput" placeholder='{"schema_version":"2.0", ...}' spellcheck="false"></textarea>
+  <button class="primary" id="makeResult">내 AI 재료표 만들기</button>
+  <p class="feedback" id="parseFeedback" aria-live="polite"></p>
+ </div>
+</section>
+
+<section class="result-shell" id="result" hidden>
+ <article class="recipe-card" id="recipeCard">
+  <div class="card-head">
+    <p class="tiny-brand">MY AI TYPE · OUR AI RECIPE</p>
+    <h2>주인님이 AI를 만들 때<br>넣은 재료들</h2>
+    <p class="subtitle" id="resultSubtitle">같은 ChatGPT로 시작했는데, 이렇게 자랐습니다.</p>
+  </div>
+
+  <div class="portrait-block">
+    <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+    <div class="animal-stage" id="animalStage" aria-hidden="true"></div>
+    <div class="portrait-copy">
+      <span class="world-tag" id="worldTag">작업실</span>
+      <p id="visualReason"></p>
+    </div>
+  </div>
+
+  <div class="section-title"><span>MAIN INGREDIENTS</span><b>주요 재료</b></div>
+  <div class="ingredients" id="ingredients"></div>
+
+  <div class="two-col">
+    <section class="mini-panel"><div class="section-title small"><span>ODD HABITS</span><b>우리 사이의 이상한 습관</b></div><ul id="habits"></ul></section>
+    <section class="mini-panel"><div class="section-title small"><span>AI NOTE</span><b>AI의 한마디</b></div><p class="ai-note" id="aiNote"></p></section>
+  </div>
+
+  <div class="why-box"><span class="why-glyph">◇</span><div><b>왜 이런 모습일까요?</b><p id="whyText"></p></div></div>
+  <footer class="card-foot"><span>myaitype.kr</span><span>당신이 아니라, 당신과 지내며 달라진 AI를 봅니다.</span></footer>
+ </article>
+ <div class="wrap result-actions"><button class="secondary" id="restart">다른 결과 붙여넣기</button></div>
+</section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
