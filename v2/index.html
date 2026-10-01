@@ -262,9 +262,56 @@
 }
 </style>
 
+
+<style id="poster2-integrated-composition">
+/* POSTER2 — one integrated result poster. Parser/schema/deep profile untouched. */
+.share-result{padding:12px 12px 20px!important;background:#f3e7d2!important}
+.share-hero{position:relative!important;min-height:760px!important;padding:0!important;border:1px solid #cfb890!important;border-radius:0!important;overflow:hidden!important;background:#f8efdD!important}
+.share-kicker{position:absolute!important;left:20px!important;top:18px!important;z-index:12!important;font-size:8px!important;letter-spacing:.16em!important;color:#63777a!important}
+.share-hero>h3{position:absolute!important;left:20px!important;top:38px!important;z-index:12!important;margin:0!important;max-width:310px!important;font-size:29px!important;line-height:1.12!important;color:#172a34!important;text-shadow:0 1px 0 rgba(255,255,255,.65)!important}
+.world-scene{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;margin:0!important;border:0!important;border-radius:0!important;background-position:center!important;background-size:cover!important}
+.world-scene:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,248,232,.76) 0,rgba(255,248,232,.12) 20%,rgba(255,248,232,0) 57%,rgba(255,248,232,.54) 100%);pointer-events:none;z-index:1}
+.scene-label{top:106px!important;left:20px!important;z-index:4!important;background:rgba(255,248,232,.78)!important;border-color:rgba(95,113,111,.35)!important}
+.scene-character{z-index:3!important;left:50%!important;bottom:210px!important;width:196px!important;height:196px!important;transform:translateX(-50%)!important}
+.scene-character svg{width:188px!important;height:188px!important;filter:drop-shadow(0 7px 5px rgba(61,48,34,.10))}
+.scene-props{position:absolute!important;inset:0!important;z-index:6!important;pointer-events:none}
+.scene-prop{position:absolute!important;width:116px!important;height:auto!important;min-height:84px!important;padding:9px 9px 8px!important;background:rgba(255,249,235,.94)!important;border:1px solid rgba(178,145,98,.55)!important;box-shadow:2px 3px 0 rgba(115,82,43,.10)!important;text-align:left!important;color:#263b40!important;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif!important}
+.scene-prop:before{display:block!important;content:""!important;position:absolute!important;top:-6px!important;left:50%!important;width:36px!important;height:11px!important;transform:translateX(-50%) rotate(-3deg)!important;background:rgba(211,177,124,.56)!important}
+.scene-prop .prop-glyph{width:auto!important;height:auto!important;margin:0 0 4px!important;display:block!important;font-size:20px!important;line-height:1!important;color:#45696d!important;filter:none!important}
+.scene-prop .prop-name{display:block!important;background:none!important;border:0!important;padding:0!important;font-size:10px!important;font-weight:750!important;line-height:1.25!important;letter-spacing:-.02em!important}
+.scene-prop strong{display:block!important;margin-top:3px!important;font:800 19px/1 ui-monospace,monospace!important;color:#1c343b!important}
+.scene-prop:nth-child(1){left:18px!important;top:148px!important;width:128px!important;transform:rotate(-2.2deg)!important}
+.scene-prop:nth-child(2){right:16px!important;top:171px!important;width:110px!important;transform:rotate(2deg)!important}
+.scene-prop:nth-child(3){left:14px!important;top:285px!important;width:105px!important;transform:rotate(1.2deg)!important}
+.scene-prop:nth-child(4){right:12px!important;top:315px!important;width:122px!important;transform:rotate(-1.4deg)!important}
+.scene-prop:nth-child(5){left:25px!important;bottom:160px!important;width:116px!important;transform:rotate(-1deg)!important}
+.scene-prop:nth-child(6){left:50%!important;bottom:112px!important;width:128px!important;transform:translateX(-50%) rotate(.8deg)!important}
+.scene-prop:nth-child(7){right:20px!important;bottom:158px!important;width:108px!important;transform:rotate(1.4deg)!important}
+.scene-prop:nth-child(2):before,.scene-prop:nth-child(6):before{width:11px!important;height:11px!important;border-radius:50%!important;background:#b88464!important}
+.scene-prop:nth-child(3):before{width:46px!important;height:2px!important;top:4px!important;background:repeating-linear-gradient(90deg,#8d795e 0 5px,transparent 5px 9px)!important}
+.scene-prop:nth-child(4):before{width:28px!important;background:rgba(171,201,194,.72)!important;transform:translateX(-50%) rotate(7deg)!important}
+.share-subtitle{position:absolute!important;z-index:10!important;left:18px!important;right:18px!important;bottom:18px!important;margin:0!important;padding:13px 15px!important;border:1px solid rgba(176,145,100,.45)!important;background:rgba(255,249,236,.93)!important;box-shadow:2px 3px 0 rgba(115,82,43,.08)!important;font-size:11.5px!important;line-height:1.55!important;color:#4f5d5f!important;transform:rotate(-.35deg)!important}
+/* The seven exact percentages now live in the illustration itself. No second card grid. */
+#shareIngredients{display:none!important}
+.share-habits{padding:24px 4px 5px!important}
+.share-habits h4,.share-note h4{font-size:16px!important}
+.share-habits ul{display:block!important}
+.share-habits li{min-height:0!important;padding:10px 2px 10px 26px!important;border:0!important;border-bottom:1px dashed #cfbfa4!important;border-radius:0!important;background:transparent!important;font-size:11px!important}
+.share-habits li:before{left:0!important;top:11px!important;width:18px!important;height:18px!important;background:transparent!important;border:1px solid #9eb2ae!important}
+.share-note{margin-top:18px!important;border:1px solid #d5c2a2!important;border-radius:0!important;background:#fff7e8!important;padding:16px!important}
+.deep-cta{margin-top:14px!important}
+@media(max-width:390px){
+ .share-hero{min-height:720px!important}
+ .share-hero>h3{font-size:27px!important}
+ .scene-character{bottom:205px!important;width:178px!important;height:178px!important}.scene-character svg{width:170px!important;height:170px!important}
+ .scene-prop{width:104px!important;padding:8px!important}.scene-prop:nth-child(1){width:116px!important}.scene-prop:nth-child(4){width:112px!important}.scene-prop:nth-child(6){width:118px!important}
+ .scene-prop .prop-name{font-size:9.4px!important}.scene-prop strong{font-size:18px!important}
+}
+</style>
+
 </head>
 <body>
-<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · POSTER1</span></header>
+<header class="topbar"><a class="brand" href="../" aria-label="MY AI TYPE 홈"><span class="pearl">◆</span><span>MY AI TYPE</span></a><span class="beta">2.0 EXPERIMENT · POSTER2</span></header>
 <main>
 <section class="intro wrap" id="start">
   <p class="eyebrow">OUR AI RECIPE</p>
